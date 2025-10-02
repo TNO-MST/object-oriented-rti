@@ -33,6 +33,10 @@
 		</developer>
 	</developers>
 
+	<issueManagement>
+		<url>https://github.com/TNO-MST/object-oriented-rti/issues</url>
+	</issueManagement>
+
 	<scm>
 		<connection>scm:git:git://github.com/TNO-MST/object-oriented-rti.git</connection>
 		<developerConnection>scm:git:ssh://github.com:TNO-MST/object-oriented-rti.git</developerConnection>
