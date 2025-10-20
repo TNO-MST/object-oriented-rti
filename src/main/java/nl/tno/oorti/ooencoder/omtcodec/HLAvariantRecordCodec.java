@@ -182,7 +182,9 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
             // found the start
             try {
               Object enumeratorValue =
-                  EnumFunctions.valueOf(discriminantClazz, entry.getName().getValue().trim());
+                  EnumFunctions.valueOf(
+                      discriminantClazz,
+                      OmtJavaMapping.toJavaName(entry.getName().getValue().trim()));
               this.accessorCodecMap.put(enumeratorValue, accessorCodec);
             } catch (IllegalArgumentException ex) {
               throw new InvalidClassStructure(ex.getMessage(), ex);
@@ -193,7 +195,9 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
               entry = it.next();
               try {
                 Object enumeratorValue =
-                    EnumFunctions.valueOf(discriminantClazz, entry.getName().getValue().trim());
+                    EnumFunctions.valueOf(
+                        discriminantClazz,
+                        OmtJavaMapping.toJavaName(entry.getName().getValue().trim()));
                 this.accessorCodecMap.put(enumeratorValue, accessorCodec);
               } catch (IllegalArgumentException ex) {
                 throw new InvalidClassStructure(ex.getMessage(), ex);
@@ -209,7 +213,8 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
         for (String enumeratorName : enumeratorNames) {
           try {
             Object enumeratorValue =
-                EnumFunctions.valueOf(discriminantClazz, enumeratorName.trim());
+                EnumFunctions.valueOf(
+                    discriminantClazz, OmtJavaMapping.toJavaName(enumeratorName.trim()));
             this.accessorCodecMap.put(enumeratorValue, accessorCodec);
           } catch (IllegalArgumentException ex) {
             throw new InvalidClassStructure(ex.getMessage(), ex);
