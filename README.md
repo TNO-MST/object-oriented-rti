@@ -1,3 +1,7 @@
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/TNO-MST/object-oriented-rti/build-publish-jar.yaml?branch=main&label=build&event=push)
+![Maven Central Version](https://img.shields.io/maven-central/v/nl.tno/oorti)
+[![javadoc](https://javadoc.io/badge2/nl.tno/oorti/javadoc.svg)](https://javadoc.io/doc/nl.tno/oorti) 
+
 # Object-oriented RTI
 
 The **Object Oriented RTI** (OORTI) extends the HLA Run Time Infrastructure (RTI) interface with methods to work with **Java Beans**. Java Beans are automatically encoded or decoded on behalf of the federate application. This approach simplifies data marshalling in the federate application. And in addition, since the [original HLA-RTI interface](https://github.com/TNO-MST/hla-java-api) is extended with additional methods, the current RTI interface methods remain available as well.
