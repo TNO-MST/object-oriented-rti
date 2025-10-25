@@ -20,7 +20,7 @@ class RPRunsignedInteger8BECodec extends HLAoctetCodec {
         .append("{")
         .append("\"type\" : ")
         .append('"')
-        .append(Short.class.getTypeName())
+        .append(Byte.class.getTypeName())
         .append('"')
         .append(",")
         .append("\"name\" : ")

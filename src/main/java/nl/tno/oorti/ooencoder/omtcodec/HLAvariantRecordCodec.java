@@ -51,15 +51,6 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
   final int maxVariantOctetBoundary;
   final int octetBoundary;
 
-  /**
-   * This constructor defines an addition argument that indicates what record encoding shall be
-   * used. If true, RPRextendableRecord encoding is used, otherwise HLAvariantRecord.
-   *
-   * @param codecFactory
-   * @param type
-   * @param dt
-   * @throws OOcodecException
-   */
   HLAvariantRecordCodec(OmtCodecFactory codecFactory, Type type, VariantRecordData dt)
       throws OOcodecException {
     if (type == null) {
@@ -101,6 +92,7 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
     Class discriminantClazz = discriminantField.getType();
 
+    // NOTE that hlaUnknownEnum is null if there is no such constant defined in the enum class
     this.hlaUnknownEnum = getEnumValue(discriminantClazz, HLA_UNKNOWN_ENUM);
 
     try {
@@ -225,8 +217,11 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
     this.hlaOtherAccessorCodec = tmpHlaOtherAccessCodec;
 
-    /** Calculate octet boundary */
-    int maxOctetBoundary = 1;
+    /** Calculate octet boundary, which is the maximum boundary of all of the variants */
+    int maxOctetBoundary =
+        this.hlaOtherAccessorCodec == null
+            ? 1
+            : this.hlaOtherAccessorCodec.codec.getOctetBoundary();
     for (AccessorCodec variant : this.accessorCodecMap.values()) {
       maxOctetBoundary = Math.max(maxOctetBoundary, variant.codec.getOctetBoundary());
     }
@@ -269,7 +264,7 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
         position =
             accessorCodec.codec.getEncodedLength(position, accessorCodec.accessor.get(value));
       } else {
-        if (this.hlaOtherAccessorCodec == null || discriminant.equals(hlaUnknownEnum)) {
+        if (discriminant.equals(hlaUnknownEnum) || this.hlaOtherAccessorCodec == null) {
           throw new InvalidValue(
               "Unspecified enumerator for discriminant " + discriminant.toString());
         } else {
@@ -302,7 +297,7 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
             this.paddingSize(byteWrapper.getPos() - offset, this.maxVariantOctetBoundary));
         accessorCodec.codec.encode(byteWrapper, accessorCodec.accessor.get(value));
       } else {
-        if (this.hlaOtherAccessorCodec == null || discriminant.equals(hlaUnknownEnum)) {
+        if (discriminant.equals(hlaUnknownEnum) || this.hlaOtherAccessorCodec == null) {
           throw new InvalidValue(
               "Unspecified enumerator for discriminant " + discriminant.toString());
         } else {
@@ -345,9 +340,7 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
             value,
             accessorCodec.codec.decode(byteWrapper, accessorCodec.accessor.get(value), value));
       } else {
-        // if the discriminant is HLAunknown then throw an exception, otherwise use the HLAother
-        // alternative if specified
-        if (this.hlaOtherAccessorCodec == null || discriminant.equals(hlaUnknownEnum)) {
+        if (discriminant.equals(hlaUnknownEnum) || this.hlaOtherAccessorCodec == null) {
           throw new InvalidValue(
               "Unspecified enumerator for discriminant " + discriminant.toString());
         } else {
@@ -386,6 +379,21 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
           .append(']');
     }
 
+    if (this.hlaOtherAccessorCodec != null) {
+      if (!variantsBuilder.isEmpty()) {
+        variantsBuilder.append(',');
+      }
+
+      variantsBuilder
+          .append('[')
+          .append('"')
+          .append(HLA_OTHER_ENUM)
+          .append('"')
+          .append(',')
+          .append(this.hlaOtherAccessorCodec.toString())
+          .append(']');
+    }
+
     return new StringBuilder()
         .append("{")
         .append("\"type\" : ")
@@ -413,6 +421,9 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
         .append(",")
         .append("\"octetBoundary\" : ")
         .append(octetBoundary)
+        .append(",")
+        .append("\"maxVariantOctetBoundary\" : ")
+        .append(maxVariantOctetBoundary)
         .append("}")
         .toString();
   }

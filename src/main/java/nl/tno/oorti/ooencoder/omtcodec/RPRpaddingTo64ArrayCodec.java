@@ -7,13 +7,9 @@ import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 /**
  * @author bergtwvd
  */
-class RPRpaddingTo64ArrayCodec implements OmtDatatypeCodec {
+class RPRpaddingTo64ArrayCodec extends HLAdataElementCodec implements OmtDatatypeCodec {
 
   RPRpaddingTo64ArrayCodec(OmtCodecFactory codecFactory, Type type, ArrayData dt) {}
-
-  private int getPadding(int dividend, int divisor) {
-    return (divisor - dividend) & (divisor - 1);
-  }
 
   @Override
   public final int getOctetBoundary() {
@@ -22,18 +18,18 @@ class RPRpaddingTo64ArrayCodec implements OmtDatatypeCodec {
 
   @Override
   public final int getEncodedLength(int position, Object value) {
-    return position + getPadding(position, 8);
+    return position + paddingSize(position, 8);
   }
 
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
-    byteWrapper.putPadding(getPadding(byteWrapper.getPos(), 8));
+    byteWrapper.putPadding(paddingSize(byteWrapper.getPos(), 8));
   }
 
   @Override
   public final Object decode(ByteArrayWrapper byteWrapper, Object value, Object outer)
       throws OOcodecException {
-    byteWrapper.advance(getPadding(byteWrapper.getPos(), 8));
+    byteWrapper.advance(paddingSize(byteWrapper.getPos(), 8));
     return null;
   }
 
@@ -48,7 +44,7 @@ class RPRpaddingTo64ArrayCodec implements OmtDatatypeCodec {
         .append(",")
         .append("\"name\" : ")
         .append('"')
-        .append("RPRpaddingTo64")
+        .append("RPRpaddingTo64Array")
         .append('"')
         .append("}")
         .toString();

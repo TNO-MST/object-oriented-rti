@@ -23,7 +23,7 @@ class HLAunsignedInteger32BECodec extends HLAinteger32BECodec {
         .append("{")
         .append("\"type\" : ")
         .append('"')
-        .append(Short.class.getTypeName())
+        .append(Integer.class.getTypeName())
         .append('"')
         .append(",")
         .append("\"name\" : ")
