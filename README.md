@@ -1,5 +1,5 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/TNO-MST/object-oriented-rti/build-publish-jar.yaml?branch=main&label=build&event=push)
-![Maven Central Version](https://img.shields.io/maven-central/v/nl.tno/oorti)
+[![Maven Central Version](https://img.shields.io/maven-central/v/nl.tno/oorti)](https://central.sonatype.com/artifact/nl.tno/oorti)
 [![javadoc](https://javadoc.io/badge2/nl.tno/oorti/javadoc.svg)](https://javadoc.io/doc/nl.tno/oorti) 
 
 # Object-oriented RTI
