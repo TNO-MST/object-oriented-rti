@@ -20,7 +20,6 @@ class HLAoctetPairBECodec implements OmtBasicDatatypeCodec {
       throws InvalidType, InvalidClassStructure {
     Class clazz = (Class) type;
 
-    /** Perform sanity checks */
     if (type == null) {
       throw new InvalidClassStructure("Missing Type");
     }

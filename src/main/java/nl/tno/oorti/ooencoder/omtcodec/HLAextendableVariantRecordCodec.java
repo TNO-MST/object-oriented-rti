@@ -128,7 +128,7 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
 
       // get the discriminant value, which may be HLAunknown
       // NOTE that the HLAunknown enumerator does not exist in the accessorCodecMap and the variant
-      // is skipped
+      // is therefore skipped later on in the code
       Object discriminant = this.discriminantCodec.decode(byteWrapper, null, null);
 
       // set the discriminant value in the Java object
@@ -151,7 +151,7 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
               value,
               accessorCodec.codec.decode(byteWrapper, accessorCodec.accessor.get(value), value));
         } else {
-          // the enum must be HLAunknown; consume the variant
+          // the enum must be HLAunknown; consume (skip) the variant
           byteWrapper.advance(variantLength);
         }
       }
