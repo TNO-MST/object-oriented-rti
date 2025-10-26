@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>nl.tno</groupId>
 	<artifactId>oorti</artifactId>
@@ -96,6 +96,9 @@
 				<configuration>
 					<failOnError>false</failOnError>
 					<additionalJOption>-Xdoclint:none</additionalJOption>
+					<links>
+						<link>https://javadoc.io/doc/nl.tno/rti1516e/latest/</link>
+					</links>
 				</configuration>
 				<executions>
 					<execution>
@@ -104,12 +107,9 @@
 						<goals>
 							<goal>jar</goal>
 						</goals>
-
 					</execution>
 				</executions>
-
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -124,8 +124,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
@@ -147,8 +145,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
-
 			<plugin>
 				<groupId>org.sonatype.central</groupId>
 				<artifactId>central-publishing-maven-plugin</artifactId>
@@ -158,8 +154,6 @@
 					<publishingServerId>central</publishingServerId>
 				</configuration>
 			</plugin>
-
-
 		</plugins>
 	</build>
 
