@@ -545,17 +545,14 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RTIinternalError,
           InteractionParameterNotDefined {
 
-    if (serializer.getInteractionClass(true, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
     InteractionClass interactionClass = serializer.createInteractionClass(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
-    return serializer.addInteractionClass(true, interactionClass).getParameterSet();
+    interactionClass.addPublications();
+    return interactionClass.getPublications();
   }
 
   @Override
-  public Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> theParameters)
+  public Set<OOparameter> publishInteractionClass(Class clazz, Set<String> theParameterNames)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -564,13 +561,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RestoreInProgress,
           InteractionParameterNotDefined {
 
-    if (serializer.getInteractionClass(true, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
-    InteractionClass interactionClass = serializer.createInteractionClass(clazz, theParameters);
+    InteractionClass interactionClass = serializer.createInteractionClass(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
-    return serializer.addInteractionClass(true, interactionClass).getParameterSet();
+    interactionClass.addPublications(theParameterNames);
+    return interactionClass.getPublications();
   }
 
   @Override
@@ -582,9 +576,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    InteractionClass interactionClass = serializer.getInteractionClassIfExists(true, clazz);
+    InteractionClass interactionClass = serializer.getInteractionClassIfExists(clazz);
     rtiamb.unpublishInteractionClass(interactionClass.getClassHandle());
-    serializer.removeInteractionClass(true, interactionClass);
+    interactionClass.removePublications();
   }
 
   @Override
@@ -598,18 +592,14 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           SaveInProgress,
           RestoreInProgress {
 
-    if (serializer.getInteractionClass(false, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
     InteractionClass interactionClass = serializer.createInteractionClass(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
-    return serializer.addInteractionClass(false, interactionClass).getParameterSet();
+    interactionClass.addSubscriptions();
+    return interactionClass.getSubscriptions();
   }
 
   @Override
-  public Set<OOparameter> subscribeInteractionClass(
-      Class clazz, Set<? extends Object> theParameters)
+  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<String> theParameterNames)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -619,13 +609,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           SaveInProgress,
           RestoreInProgress {
 
-    if (serializer.getInteractionClass(false, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
-    InteractionClass interactionClass = serializer.createInteractionClass(clazz, theParameters);
+    InteractionClass interactionClass = serializer.createInteractionClass(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
-    return serializer.addInteractionClass(false, interactionClass).getParameterSet();
+    interactionClass.addSubscriptions(theParameterNames);
+    return interactionClass.getSubscriptions();
   }
 
   @Override
@@ -637,9 +624,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    InteractionClass interactionClass = serializer.getInteractionClassIfExists(false, clazz);
+    InteractionClass interactionClass = serializer.getInteractionClassIfExists(clazz);
     rtiamb.unsubscribeInteractionClass(interactionClass.getClassHandle());
-    serializer.removeInteractionClass(false, interactionClass);
+    interactionClass.removeSubscriptions();
   }
 
   ////////////////////////////////

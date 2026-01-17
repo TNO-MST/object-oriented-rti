@@ -14,34 +14,26 @@ public class Parameter implements OOparameter {
   private final String name;
   private final ParameterHandle parameterHandle;
   private final Accessor accessor;
-  private final Object cookie;
-  private final OOencoder dataElementCodec;
+  private final OOencoder encoder;
 
   Parameter(
       InteractionClass interactionClass,
       String name,
       ParameterHandle parameterHandle,
-      Object cookie,
       Accessor accessor,
-      OOencoder dataElementCodec) {
+      OOencoder encoder) {
     this.interactionClass = interactionClass;
     this.name = name;
     this.parameterHandle = parameterHandle;
-    this.cookie = cookie;
     this.accessor = accessor;
-    this.dataElementCodec = dataElementCodec;
+    this.encoder = encoder;
   }
 
   @Override
   public String getName() {
     return this.name;
   }
-
-  @Override
-  public Object getCookie() {
-    return this.cookie;
-  }
-
+  
   public InteractionClass getInteractionClass() {
     return interactionClass;
   }
@@ -54,7 +46,7 @@ public class Parameter implements OOparameter {
     return accessor;
   }
 
-  public OOencoder getDataElementCodec() {
-    return dataElementCodec;
+  public OOencoder getEncoder() {
+    return encoder;
   }
 }

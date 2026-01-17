@@ -233,7 +233,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       MessageRetractionHandle retractionHandle,
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {
-    InteractionClass ic = rtiamb.serializer.getInteractionClass(false, classHandle);
+    InteractionClass ic = rtiamb.serializer.getInteractionClass(classHandle);
     if (ic == null) {
       // if the interaction class was not registered use the regular call back
       federateReference.receiveInteraction(
@@ -276,7 +276,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       OrderType receivedOrdering,
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {
-    InteractionClass ic = rtiamb.serializer.getInteractionClass(false, classHandle);
+    InteractionClass ic = rtiamb.serializer.getInteractionClass(classHandle);
     if (ic == null) {
       // if the interaction class was not registered use the regular call back
       federateReference.receiveInteraction(
@@ -315,7 +315,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       TransportationTypeHandle theTransport,
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {
-    InteractionClass ic = rtiamb.serializer.getInteractionClass(false, classHandle);
+    InteractionClass ic = rtiamb.serializer.getInteractionClass(classHandle);
     if (ic == null) {
       // if the interaction class was not registered use the regular call back
       federateReference.receiveInteraction(

@@ -10,15 +10,12 @@ import hla.rti1516e.AttributeHandleValueMapFactory;
 import hla.rti1516e.InteractionClassHandle;
 import hla.rti1516e.ObjectClassHandle;
 import hla.rti1516e.ObjectInstanceHandle;
-import hla.rti1516e.ParameterHandle;
 import hla.rti1516e.ParameterHandleValueMap;
-import hla.rti1516e.ParameterHandleValueMapFactory;
 import hla.rti1516e.RTIambassador;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
 import hla.rti1516e.exceptions.InteractionClassNotDefined;
 import hla.rti1516e.exceptions.InteractionParameterNotDefined;
-import hla.rti1516e.exceptions.InvalidInteractionClassHandle;
 import hla.rti1516e.exceptions.InvalidObjectClassHandle;
 import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
@@ -64,7 +61,6 @@ public class Serializer {
   private final OOencoderFactory encoderFactory;
   private final OOobjectFactory objectFactory;
   private final AttributeHandleValueMapFactory attribHVMFactory;
-  private final ParameterHandleValueMapFactory paramHVMFactory;
   private final AttributeHandleSetFactory attribHandleFactory;
 
   // the FOM modules
@@ -73,9 +69,10 @@ public class Serializer {
   // collections
   private final ObjectClassCollection pubObjectClasses = new ObjectClassCollection();
   private final ObjectClassCollection subObjectClasses = new ObjectClassCollection();
-  private final InteractionClassCollection pubInteractionClasses = new InteractionClassCollection();
-  private final InteractionClassCollection subInteractionClasses = new InteractionClassCollection();
   private final ObjectInstanceCollection objectInstances = new ObjectInstanceCollection();
+
+  // managers
+  private final InteractionClassManager icm;
 
   // settings
   private final OOproperties properties;
@@ -106,8 +103,9 @@ public class Serializer {
         OOencoderFactoryFactory.getOOencoderFactory(
             properties.getEncodingType(), accessorFactory, modules);
     this.attribHVMFactory = rtiamb.getAttributeHandleValueMapFactory();
-    this.paramHVMFactory = rtiamb.getParameterHandleValueMapFactory();
     this.attribHandleFactory = rtiamb.getAttributeHandleSetFactory();
+
+    this.icm = new InteractionClassManager(rtiamb, accessorFactory, encoderFactory, modules);
   }
 
   //////////////////////////
@@ -130,7 +128,7 @@ public class Serializer {
           ObjectClassNotDefined {
 
     // get the FQ name for the Java class
-    String fqClassName = this.getFullyQualifiedObjectClassName(clazz);
+    String fqClassName = getFullyQualifiedObjectClassName(clazz);
 
     ObjectClassHandle classHandle;
     try {
@@ -470,105 +468,10 @@ public class Serializer {
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
-          InteractionParameterNotDefined,
-          InteractionClassNotDefined {
-    return createInteractionClass(clazz, null);
-  }
-
-  public InteractionClass createInteractionClass(Class clazz, Set<? extends Object> cookies)
-      throws FederateNotExecutionMember,
-          NotConnected,
-          RTIinternalError,
           InteractionClassNotDefined,
           InteractionParameterNotDefined {
 
-    // get the FQ name for the Java class
-    String fqClassName = this.getFullyQualifiedInteractionClassName(clazz);
-
-    InteractionClassHandle classHandle;
-    try {
-      classHandle = rtiamb.getInteractionClassHandle(fqClassName);
-    } catch (NameNotFound ex) {
-      throw new InteractionClassNotDefined(ex.getMessage(), ex);
-    }
-
-    // create the Interaction Class
-    InteractionClass interactionClass = new InteractionClass(clazz, fqClassName, classHandle);
-
-    // get the parameters as defined in the FOM
-    Set<nl.tno.omt.Parameter> parameters =
-        OmtFunctions.getInteractionClassParameters(modules, fqClassName);
-    if (parameters == null) {
-      // something went wrong
-      throw new InteractionClassNotDefined("Cannot get parameters of Class " + fqClassName);
-    }
-
-    LOGGER.log(LOGLEVEL, "Add Class={0}", new Object[] {fqClassName});
-
-    // create a parameter for each Java class field
-    Collection<Field> fields = ClassUtils.getFields(clazz);
-
-    for (Field field : fields) {
-      try {
-        String fieldName = field.getName();
-
-        // check if the field exists in the FOM
-        nl.tno.omt.Parameter omtParameter =
-            this.getOmtParameterByName(parameters, OmtJavaMapping.toOmtName(fieldName));
-        if (omtParameter == null) {
-          throw new InteractionParameterNotDefined(
-              "Java Class attribute " + field.getName() + " not defined in FOM");
-        }
-
-        // create accessor for the Java Class field
-        Accessor accessor = accessorFactory.createAccessor(field);
-
-        // create codec for the Java Class field
-        OOencoder codec =
-            this.encoderFactory.createOOencoder(
-                field.getGenericType(), omtParameter.getDataType().getValue());
-
-        // create parameter and add to class
-        ParameterHandle parmHandle = rtiamb.getParameterHandle(classHandle, fieldName);
-
-        // check if there is a cookie for this parameter
-        Object cookie = null;
-        if (cookies != null) {
-          for (Object c : cookies) {
-            if (c.toString().equals(fieldName)) {
-              cookie = c;
-              break;
-            }
-          }
-        }
-
-        Parameter parameter =
-            new Parameter(interactionClass, fieldName, parmHandle, cookie, accessor, codec);
-        interactionClass.addParameter(parameter);
-
-        LOGGER.log(LOGLEVEL, "Add Parameter={0}", new Object[] {fieldName});
-      } catch (OOcodecException | ReflectiveOperationException ex) {
-        throw new RTIinternalError(ex.getMessage(), ex);
-      } catch (InvalidInteractionClassHandle ex) {
-        throw new InteractionClassNotDefined(ex.getMessage(), ex);
-      } catch (NameNotFound ex) {
-        throw new InteractionParameterNotDefined(ex.getMessage(), ex);
-      }
-    }
-
-    return interactionClass;
-  }
-
-  public InteractionClass addInteractionClass(boolean pub, InteractionClass interactionClass) {
-    return pub
-        ? this.pubInteractionClasses.add(interactionClass)
-        : this.subInteractionClasses.add(interactionClass);
-  }
-
-  public InteractionClass removeInteractionClass(boolean pub, InteractionClass interactionClass) {
-    return pub
-        ? this.pubInteractionClasses.remove(interactionClass)
-        : this.subInteractionClasses.remove(interactionClass);
+    return this.icm.get(clazz);
   }
 
   ///////////////////////////////////////
@@ -579,10 +482,16 @@ public class Serializer {
       throws RTIinternalError, InteractionClassNotDefined {
 
     InteractionClass ic =
-        this.getInteractionClassIfExists(
-            true, this.objectFactory.getInteractionClass(theInteraction));
+        this.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
 
-    return serializeInteraction(ic, theInteraction, ic.getParameterSet(), result);
+    ParameterHandleValueMap parameterValueMap = ic.serialize(theInteraction);
+    if (result == null) {
+      result = new SerializedInteractionData(ic.getClassHandle(), parameterValueMap);
+    } else {
+      result.set(ic.getClassHandle(), parameterValueMap);
+    }
+
+    return result;
   }
 
   public SerializedInteractionData serializeInteraction(
@@ -590,63 +499,16 @@ public class Serializer {
       throws RTIinternalError, InteractionClassNotDefined {
 
     InteractionClass ic =
-        this.getInteractionClassIfExists(
-            true, this.objectFactory.getInteractionClass(theInteraction));
+        this.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
 
-    return serializeInteraction(ic, theInteraction, parameterSet, result);
-  }
-
-  private SerializedInteractionData serializeInteraction(
-      InteractionClass interactionClass,
-      Object theInteraction,
-      Set<OOparameter> parameterSet,
-      SerializedInteractionData result)
-      throws RTIinternalError {
-    try {
-      // the resulting value map
-      ParameterHandleValueMap parameterValueMap = this.paramHVMFactory.create(parameterSet.size());
-
-      for (OOparameter ooParameter : parameterSet) {
-        Parameter parameter = (Parameter) ooParameter;
-
-        // get the parameter value
-        Object value = parameter.getAccessor().get(theInteraction);
-        if (value == null) {
-          // do not serialize null value; skip
-          continue;
-        }
-
-        try {
-          // encode the parameter value to bytes
-          byte[] bytes = parameter.getDataElementCodec().encode(value);
-
-          // add to results
-          parameterValueMap.put(parameter.getParameterHandle(), bytes);
-        } catch (OOcodecException ex) {
-          LOGGER.log(
-              Level.WARNING,
-              "Error encoding class={0}, parameter={1}, codec={2}, value={3}",
-              new Object[] {
-                interactionClass.getName(),
-                parameter.getName(),
-                parameter.getDataElementCodec().toString(),
-                JsonbBuilder.create().toJson(value)
-              });
-          throw new RTIinternalError(ex.getMessage(), ex);
-        }
-      }
-
-      if (result == null) {
-        result =
-            new SerializedInteractionData(interactionClass.getClassHandle(), parameterValueMap);
-      } else {
-        result.set(interactionClass.getClassHandle(), parameterValueMap);
-      }
-
-      return result;
-    } catch (ReflectiveOperationException ex) {
-      throw new RTIinternalError(ex.getMessage(), ex);
+    ParameterHandleValueMap parameterValueMap = ic.serialize(theInteraction, parameterSet);
+    if (result == null) {
+      result = new SerializedInteractionData(ic.getClassHandle(), parameterValueMap);
+    } else {
+      result.set(ic.getClassHandle(), parameterValueMap);
     }
+
+    return result;
   }
 
   public DeserializedInteractionData deserializeInteraction(
@@ -655,45 +517,10 @@ public class Serializer {
       DeserializedInteractionData result)
       throws RTIinternalError {
     try {
-      // create a new object to return the data in
       Object theInteraction = this.objectFactory.createInteraction(interactionClass.getClazz());
 
-      Set<OOparameter> parameterSet = new HashSet<>();
-
-      for (ParameterHandle parameterHandle : parameterValueMap.keySet()) {
-        // the bytes to deserialize
-        byte[] bytes = parameterValueMap.get(parameterHandle);
-
-        // get the parameter
-        Parameter parameter = interactionClass.getParameterByHandle(parameterHandle);
-        if (parameter == null) {
-          // received parameter not in Java Class, so skip
-          continue;
-        }
-
-        // decode the bytes to a parameter value
-        Object value;
-        try {
-          value = parameter.getDataElementCodec().decode(bytes, null, theInteraction);
-        } catch (OOcodecException ex) {
-          LOGGER.log(
-              Level.WARNING,
-              "Error decoding class={0}, parameter={1}, codec={2}, len={3}, bytes={4}",
-              new Object[] {
-                interactionClass.getName(),
-                parameter.getName(),
-                parameter.getDataElementCodec().toString(),
-                bytes.length,
-                bytesToHex(bytes)
-              });
-          throw new RTIinternalError(ex.getMessage(), ex);
-        }
-
-        // set the new parameter value
-        parameter.getAccessor().set(theInteraction, value);
-
-        parameterSet.add(parameter);
-      }
+      Set<OOparameter> parameterSet =
+          interactionClass.deserialize(parameterValueMap, theInteraction);
 
       if (result == null) {
         result = new DeserializedInteractionData(theInteraction, parameterSet);
@@ -702,7 +529,7 @@ public class Serializer {
       }
 
       return result;
-    } catch (InteractionClassNotDefined | ReflectiveOperationException ex) {
+    } catch (InteractionClassNotDefined ex) {
       throw new RTIinternalError(ex.getMessage(), ex);
     }
   }
@@ -728,23 +555,6 @@ public class Serializer {
   }
 
   /**
-   * This method returns the OMT parameter, given its name, or null when none found.
-   *
-   * @param attributes
-   * @param name
-   * @return
-   */
-  private nl.tno.omt.Parameter getOmtParameterByName(
-      Set<nl.tno.omt.Parameter> parameters, String name) {
-    for (nl.tno.omt.Parameter parameter : parameters) {
-      if (parameter.getName().getValue().equals(name)) {
-        return parameter;
-      }
-    }
-    return null;
-  }
-
-  /**
    * This method returns fully qualified OMT class name for the provided Java class. Two variants
    * for class naming are handled:
    *
@@ -754,10 +564,10 @@ public class Serializer {
    * <p>(2) The Java class name and that of its supers corresponds with the simple OMT class name.
    *
    * @param clazz
-   * @param name of root class
+   * @param rootName of root class
    * @return FQ OMT class name
    */
-  private String getFullyQualifiedClassName(Class clazz, String rootName) {
+  public static String getFullyQualifiedClassName(Class clazz, String rootName) {
     if (clazz == Object.class) {
       return rootName;
     }
@@ -786,11 +596,11 @@ public class Serializer {
     }
   }
 
-  private String getFullyQualifiedObjectClassName(Class clazz) {
+  public static String getFullyQualifiedObjectClassName(Class clazz) {
     return getFullyQualifiedClassName(clazz, OmtMimConstants.HLAOBJECTROOT);
   }
 
-  private String getFullyQualifiedInteractionClassName(Class clazz) {
+  public static String getFullyQualifiedInteractionClassName(Class clazz) {
     return getFullyQualifiedClassName(clazz, OmtMimConstants.HLAINTERACTIONROOT);
   }
 
@@ -819,25 +629,21 @@ public class Serializer {
   //////////////////////////////////////
   // Support methods for InteractionClass
   //////////////////////////////////////
-  public InteractionClass getInteractionClassIfExists(boolean pub, Class clazz)
+  public InteractionClass getInteractionClassIfExists(Class clazz)
       throws InteractionClassNotDefined {
-    InteractionClass ic = getInteractionClass(pub, clazz);
+    InteractionClass ic = icm.getClassByClazz(clazz);
     if (ic == null) {
       throw new InteractionClassNotDefined("Unknown class " + clazz.getSimpleName());
     }
     return ic;
   }
 
-  public InteractionClass getInteractionClass(boolean pub, Class clazz) {
-    return pub
-        ? pubInteractionClasses.getClassByClazz(clazz)
-        : subInteractionClasses.getClassByClazz(clazz);
+  public InteractionClass getInteractionClass(Class clazz) {
+    return icm.getClassByClazz(clazz);
   }
 
-  public InteractionClass getInteractionClass(boolean pub, InteractionClassHandle classHandle) {
-    return pub
-        ? pubInteractionClasses.getClassByHandle(classHandle)
-        : subInteractionClasses.getClassByHandle(classHandle);
+  public InteractionClass getInteractionClass(InteractionClassHandle classHandle) {
+    return icm.getClassByHandle(classHandle);
   }
 
   //////////////////////////////////////
@@ -881,9 +687,9 @@ public class Serializer {
   //////////////////////////////////////
   // Support methods for hex conversion
   //////////////////////////////////////
-  private final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+  private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
-  private String bytesToHex(byte[] bytes) {
+  public static String bytesToHex(byte[] bytes) {
     char[] hexChars = new char[bytes.length * 2];
     for (int j = 0; j < bytes.length; j++) {
       int v = bytes[j] & 0xFF;

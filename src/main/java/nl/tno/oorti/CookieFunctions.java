@@ -43,12 +43,12 @@ public class CookieFunctions {
     Set<OOparameter> result = new HashSet<>();
     for (Object cookie : cookies) {
       for (OOparameter parameter : theParameters) {
-        if (parameter.getCookie() != null) {
-          if (parameter.getCookie().equals(cookie)) {
-            result.add(parameter);
-            break;
-          }
-        }
+//        if (parameter.getCookie() != null) {
+//          if (parameter.getCookie().equals(cookie)) {
+//            result.add(parameter);
+//            break;
+//          }
+//        }
       }
     }
     return result;
@@ -56,11 +56,11 @@ public class CookieFunctions {
 
   public static OOparameter getParameter(Set<OOparameter> theParameters, Object cookie) {
     for (OOparameter parameter : theParameters) {
-      if (parameter.getCookie() != null) {
-        if (parameter.getCookie().equals(cookie)) {
-          return parameter;
-        }
-      }
+//      if (parameter.getCookie() != null) {
+//        if (parameter.getCookie().equals(cookie)) {
+//          return parameter;
+//        }
+//      }
     }
     return null;
   }

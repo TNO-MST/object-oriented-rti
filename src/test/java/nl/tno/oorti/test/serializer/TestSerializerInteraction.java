@@ -56,8 +56,11 @@ public class TestSerializerInteraction extends NullFederateAmbassador {
 		Message theMessage1 = new Message();
 		theMessage1.setContents("hello");
 
-		InteractionClass ic1 = ser1.addInteractionClass(true, ser1.createInteractionClass(Message.class));
-		InteractionClass ic2 = ser2.addInteractionClass(true, ser2.createInteractionClass(Message.class));
+		InteractionClass ic1 = ser1.createInteractionClass(Message.class);
+		InteractionClass ic2 = ser2.createInteractionClass(Message.class);
+
+    ic1.addPublications();
+    ic2.addSubscriptions();
 
 		SerializedInteractionData serializedData = ser1.serializeInteraction(theMessage1, null);
 		DeserializedInteractionData deserializedData = ser2.deserializeInteraction(ic2, serializedData.getParameterValueMap(), null);
@@ -111,8 +114,11 @@ public class TestSerializerInteraction extends NullFederateAmbassador {
 		Serializer ser1 = new Serializer(rtiamb, modules, objectFactory, new OOproperties());
 		Serializer ser2 = new Serializer(rtiamb, modules, objectFactory, new OOproperties());
 
-		InteractionClass ic1 = ser1.addInteractionClass(true, ser1.createInteractionClass(Message.class));
-		InteractionClass ic2 = ser2.addInteractionClass(true, ser2.createInteractionClass(Message.class));
+		InteractionClass ic1 = ser1.createInteractionClass(Message.class);
+		InteractionClass ic2 = ser2.createInteractionClass(Message.class);
+    
+    ic1.addPublications();
+    ic2.addSubscriptions();
 
 		Message theMessage1 = objectFactory.createInteraction(Message.class);
 		theMessage1.setContents("hello");
