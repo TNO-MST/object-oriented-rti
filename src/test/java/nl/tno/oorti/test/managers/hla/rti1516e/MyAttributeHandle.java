@@ -1,12 +1,12 @@
-package nl.tno.oorti.test.serializer.hla.rti1516e;
+package nl.tno.oorti.test.managers.hla.rti1516e;
 
-import hla.rti1516e.InteractionClassHandle;
+import hla.rti1516e.AttributeHandle;
 
 /**
  *
  * @author bergtwvd
  */
-public class MyInteractionClassHandle implements InteractionClassHandle {
+public class MyAttributeHandle implements AttributeHandle {
 
     @Override
     public int encodedLength() {

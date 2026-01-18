@@ -23,6 +23,7 @@ import hla.rti1516e.TransportationTypeHandle;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.FederateInternalError;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
+import hla.rti1516e.exceptions.InteractionClassNotDefined;
 import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.ObjectInstanceNotKnown;
@@ -30,16 +31,11 @@ import hla.rti1516e.exceptions.RTIinternalError;
 import hla.rti1516e.exceptions.RestoreInProgress;
 import hla.rti1516e.exceptions.SaveInProgress;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashSet;
 import java.util.Set;
 import nl.tno.oorti.OOFederateAmbassador;
 import nl.tno.oorti.OOattribute;
+import nl.tno.oorti.OOparameter;
 import nl.tno.oorti.impl.mim.objects.HLAfederation;
-import nl.tno.oorti.impl.serializer.DeserializedInteractionData;
-import nl.tno.oorti.impl.serializer.DeserializedObjectData;
-import nl.tno.oorti.impl.serializer.InteractionClass;
-import nl.tno.oorti.impl.serializer.ObjectClass;
-import nl.tno.oorti.impl.serializer.ObjectInstance;
 
 /**
  * @author bergtwvd
@@ -49,10 +45,6 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
   final OORTIambassadorImpl rtiamb;
   final OOFederateAmbassador federateReference;
   final boolean isCheckInitialState;
-
-  // pre-allocate space for the deserialized objectData
-  final DeserializedObjectData objectData = new DeserializedObjectData();
-  final DeserializedInteractionData interactionData = new DeserializedInteractionData();
 
   // getting the FDD from the RTI is done in the initial state
   boolean isInInitialState;
@@ -233,7 +225,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       MessageRetractionHandle retractionHandle,
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {
-    InteractionClass ic = rtiamb.serializer.getInteractionClass(classHandle);
+
+    InteractionClass ic = rtiamb.icm.getClassByHandle(classHandle);
     if (ic == null) {
       // if the interaction class was not registered use the regular call back
       federateReference.receiveInteraction(
@@ -248,20 +241,22 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
           receiveInfo);
     } else {
       try {
-        rtiamb.serializer.deserializeInteraction(ic, theParameters, interactionData);
-      } catch (RTIinternalError ex) {
+        Object theInteraction = rtiamb.objectFactory.createInteraction(ic.getClazz());
+        Set<OOparameter> parameterSet = ic.deserialize(theParameters, theInteraction);
+
+        federateReference.receiveInteraction(
+            theInteraction,
+            parameterSet,
+            userSuppliedTag,
+            sentOrdering,
+            theTransport,
+            theTime,
+            receivedOrdering,
+            retractionHandle,
+            receiveInfo);
+      } catch (InteractionClassNotDefined | RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
       }
-      federateReference.receiveInteraction(
-          interactionData.getTheInteraction(),
-          interactionData.getParameterSet(),
-          userSuppliedTag,
-          sentOrdering,
-          theTransport,
-          theTime,
-          receivedOrdering,
-          retractionHandle,
-          receiveInfo);
     }
   }
 
@@ -276,7 +271,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       OrderType receivedOrdering,
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {
-    InteractionClass ic = rtiamb.serializer.getInteractionClass(classHandle);
+
+    InteractionClass ic = rtiamb.icm.getClassByHandle(classHandle);
     if (ic == null) {
       // if the interaction class was not registered use the regular call back
       federateReference.receiveInteraction(
@@ -290,19 +286,21 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
           receiveInfo);
     } else {
       try {
-        rtiamb.serializer.deserializeInteraction(ic, theParameters, interactionData);
-      } catch (RTIinternalError ex) {
+        Object theInteraction = rtiamb.objectFactory.createInteraction(ic.getClazz());
+        Set<OOparameter> parameterSet = ic.deserialize(theParameters, theInteraction);
+
+        federateReference.receiveInteraction(
+            theInteraction,
+            parameterSet,
+            userSuppliedTag,
+            sentOrdering,
+            theTransport,
+            theTime,
+            receivedOrdering,
+            receiveInfo);
+      } catch (InteractionClassNotDefined | RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
       }
-      federateReference.receiveInteraction(
-          interactionData.getTheInteraction(),
-          interactionData.getParameterSet(),
-          userSuppliedTag,
-          sentOrdering,
-          theTransport,
-          theTime,
-          receivedOrdering,
-          receiveInfo);
     }
   }
 
@@ -315,22 +313,20 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       TransportationTypeHandle theTransport,
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {
-    InteractionClass ic = rtiamb.serializer.getInteractionClass(classHandle);
+
+    InteractionClass ic = rtiamb.icm.getClassByHandle(classHandle);
     if (ic == null) {
       // if the interaction class was not registered use the regular call back
       federateReference.receiveInteraction(
           classHandle, theParameters, userSuppliedTag, sentOrdering, theTransport, receiveInfo);
     } else {
       try {
-        rtiamb.serializer.deserializeInteraction(ic, theParameters, interactionData);
+        Object theInteraction = rtiamb.objectFactory.createInteraction(ic.getClazz());
+        Set<OOparameter> parameterSet = ic.deserialize(theParameters, theInteraction);
+
         federateReference.receiveInteraction(
-            interactionData.getTheInteraction(),
-            interactionData.getParameterSet(),
-            userSuppliedTag,
-            sentOrdering,
-            theTransport,
-            receiveInfo);
-      } catch (RTIinternalError ex) {
+            theInteraction, parameterSet, userSuppliedTag, sentOrdering, theTransport, receiveInfo);
+      } catch (InteractionClassNotDefined | RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
       }
     }
@@ -339,8 +335,9 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
   private void discoverHLAfederationInstance(
       ObjectInstanceHandle instanceHandle, ObjectClassHandle classHandle)
       throws FederateInternalError {
+    
     // get the object class of the discovered instance
-    ObjectClass oc = rtiamb.momSerializer.getObjectClass(false, classHandle);
+    ObjectClass oc = rtiamb.ocmMim.getClassByHandle(classHandle);
 
     // keep the instance handle for quick lookup later
     rtiamb.hlaFederationInstanceHandle = instanceHandle;
@@ -351,8 +348,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       rtiamb.hlaFederation =
           (HLAfederation)
               rtiamb
-                  .momSerializer
-                  .createObjectInstance(
+                  .oim
+                  .create(
                       oc,
                       instanceHandle,
                       oc.getClazz().getDeclaredConstructor().newInstance(),
@@ -360,8 +357,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
                   .getObject();
 
       // request attribute values
-      rtiamb.requestAttributeValueUpdate(
-          instanceHandle, oc.createAttributeHandleSet(oc.getAttributeSet()), null);
+      rtiamb.requestAttributeValueUpdate(instanceHandle, oc.createAttributeHandleSet(), null);
     } catch (AttributeNotDefined
         | FederateNotExecutionMember
         | NotConnected
@@ -387,6 +383,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       String theObjectName,
       FederateHandle producingFederate)
       throws FederateInternalError {
+    
     if (this.isCheckInitialState && this.isInInitialState) {
       synchronized (this.rtiamb) {
         this.discoverHLAfederationInstance(instanceHandle, classHandle);
@@ -394,15 +391,14 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       }
     } else {
       // if the object class was not registered use the regular call back
-      ObjectClass oc = rtiamb.serializer.getObjectClass(false, classHandle);
+      ObjectClass oc = rtiamb.ocm.getClassByHandle(classHandle);
       if (oc == null) {
         federateReference.discoverObjectInstance(
             instanceHandle, classHandle, theObjectName, producingFederate);
       } else {
         try {
           Object theObject = rtiamb.objectFactory.createObject(oc.getClazz());
-          ObjectInstance oi =
-              rtiamb.serializer.createObjectInstance(oc, instanceHandle, theObject, theObjectName);
+          ObjectInstance oi = rtiamb.oim.create(oc, instanceHandle, theObject, theObjectName);
           federateReference.discoverObjectInstance(
               oi.getObject(), theObjectName, producingFederate);
         } catch (ObjectClassNotDefined | RTIinternalError ex) {
@@ -416,6 +412,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
   public void discoverObjectInstance(
       ObjectInstanceHandle instanceHandle, ObjectClassHandle classHandle, String theObjectName)
       throws FederateInternalError {
+    
     if (this.isCheckInitialState && this.isInInitialState) {
       synchronized (this.rtiamb) {
         this.discoverHLAfederationInstance(instanceHandle, classHandle);
@@ -423,14 +420,13 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       }
     } else {
       // if the object class was not registered use the regular call back
-      ObjectClass oc = rtiamb.serializer.getObjectClass(false, classHandle);
+      ObjectClass oc = rtiamb.ocm.getClassByHandle(classHandle);
       if (oc == null) {
         federateReference.discoverObjectInstance(instanceHandle, classHandle, theObjectName);
       } else {
         try {
           Object theObject = rtiamb.objectFactory.createObject(oc.getClazz());
-          ObjectInstance oi =
-              rtiamb.serializer.createObjectInstance(oc, instanceHandle, theObject, theObjectName);
+          ObjectInstance oi = rtiamb.oim.create(oc, instanceHandle, theObject, theObjectName);
           federateReference.discoverObjectInstance(oi.getObject(), theObjectName);
         } catch (ObjectClassNotDefined | RTIinternalError ex) {
           throw new FederateInternalError(ex.getMessage(), ex);
@@ -443,8 +439,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       ObjectInstanceHandle instanceHandle, AttributeHandleValueMap theAttributes)
       throws FederateInternalError {
     try {
-      rtiamb.momSerializer.deserializeObject(
-          rtiamb.momSerializer.getObjectInstance(instanceHandle), theAttributes, this.objectData);
+      rtiamb.oim.getObjectInstanceByHandle(instanceHandle).deserialize(theAttributes);
     } catch (RTIinternalError ex) {
       throw new FederateInternalError(ex.getMessage(), ex);
     }
@@ -462,6 +457,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       MessageRetractionHandle retractionHandle,
       SupplementalReflectInfo reflectInfo)
       throws FederateInternalError {
+    
     if (this.isCheckInitialState && this.isInInitialState) {
       synchronized (this.rtiamb) {
         if (this.isInInitialState = this.rtiamb.hlaFederationInstanceHandle != null) {
@@ -473,7 +469,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     }
 
     // if the object instance was not registered use the regular call back
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       federateReference.reflectAttributeValues(
           instanceHandle,
@@ -487,10 +483,11 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
           reflectInfo);
     } else {
       try {
-        rtiamb.serializer.deserializeObject(oi, theAttributes, objectData);
+        Set<OOattribute> attributeSet = oi.deserialize(theAttributes);
+
         federateReference.reflectAttributeValues(
-            objectData.getTheObject(),
-            objectData.getAttributeSet(),
+            oi.getObject(),
+            attributeSet,
             userSuppliedTag,
             sentOrdering,
             theTransport,
@@ -515,6 +512,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       OrderType receivedOrdering,
       FederateAmbassador.SupplementalReflectInfo reflectInfo)
       throws FederateInternalError {
+    
     if (this.isCheckInitialState && this.isInInitialState) {
       synchronized (this.rtiamb) {
         if (this.isInInitialState = this.rtiamb.hlaFederationInstanceHandle != null) {
@@ -526,7 +524,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     }
 
     // if the object instance was not registered use the regular call back
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       federateReference.reflectAttributeValues(
           instanceHandle,
@@ -539,10 +537,11 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
           reflectInfo);
     } else {
       try {
-        rtiamb.serializer.deserializeObject(oi, theAttributes, objectData);
+        Set<OOattribute> attributeSet = oi.deserialize(theAttributes);
+
         federateReference.reflectAttributeValues(
-            objectData.getTheObject(),
-            objectData.getAttributeSet(),
+            oi.getObject(),
+            attributeSet,
             userSuppliedTag,
             sentOrdering,
             theTransport,
@@ -564,6 +563,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       TransportationTypeHandle theTransport,
       FederateAmbassador.SupplementalReflectInfo reflectInfo)
       throws FederateInternalError {
+    
     if (this.isCheckInitialState && this.isInInitialState) {
       synchronized (this.rtiamb) {
         if (this.isInInitialState = this.rtiamb.hlaFederationInstanceHandle != null) {
@@ -575,20 +575,16 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     }
 
     // if the object instance was not registered use the regular call back
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       federateReference.reflectAttributeValues(
           instanceHandle, theAttributes, userSuppliedTag, sentOrdering, theTransport, reflectInfo);
     } else {
       try {
-        rtiamb.serializer.deserializeObject(oi, theAttributes, objectData);
+        Set<OOattribute> attributeSet = oi.deserialize(theAttributes);
+
         federateReference.reflectAttributeValues(
-            objectData.getTheObject(),
-            objectData.getAttributeSet(),
-            userSuppliedTag,
-            sentOrdering,
-            theTransport,
-            reflectInfo);
+            oi.getObject(), attributeSet, userSuppliedTag, sentOrdering, theTransport, reflectInfo);
       } catch (RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
       }
@@ -606,7 +602,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       FederateAmbassador.SupplementalRemoveInfo removeInfo)
       throws FederateInternalError {
     // if the object instance was not registered use the regular call back
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       federateReference.removeObjectInstance(
           instanceHandle,
@@ -617,7 +613,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
           retractionHandle,
           removeInfo);
     } else {
-      rtiamb.serializer.removeObjectInstance(oi);
+      rtiamb.oim.removeObjectInstance(oi);
       federateReference.removeObjectInstance(
           oi.getObject(),
           userSuppliedTag,
@@ -639,12 +635,12 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       FederateAmbassador.SupplementalRemoveInfo removeInfo)
       throws FederateInternalError {
     // if the object instance was not registered use the regular call back
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       federateReference.removeObjectInstance(
           instanceHandle, userSuppliedTag, sentOrdering, theTime, receivedOrdering, removeInfo);
     } else {
-      rtiamb.serializer.removeObjectInstance(oi);
+      rtiamb.oim.removeObjectInstance(oi);
       federateReference.removeObjectInstance(
           oi.getObject(), userSuppliedTag, sentOrdering, theTime, receivedOrdering, removeInfo);
     }
@@ -658,12 +654,12 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       FederateAmbassador.SupplementalRemoveInfo removeInfo)
       throws FederateInternalError {
     // if the object instance was not registered use the regular call back
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       federateReference.removeObjectInstance(
           instanceHandle, userSuppliedTag, sentOrdering, removeInfo);
     } else {
-      rtiamb.serializer.removeObjectInstance(oi);
+      rtiamb.oim.removeObjectInstance(oi);
       federateReference.removeObjectInstance(
           oi.getObject(), userSuppliedTag, sentOrdering, removeInfo);
     }
@@ -673,22 +669,21 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
   public void provideAttributeValueUpdate(
       ObjectInstanceHandle instanceHandle, AttributeHandleSet theAttributes, byte[] userSuppliedTag)
       throws FederateInternalError {
-    // use the RTI ambassador serialiser to look for the instance!
-    ObjectInstance oi = rtiamb.serializer.getObjectInstance(instanceHandle);
+
+    ObjectInstance oi = rtiamb.oim.getObjectInstanceByHandle(instanceHandle);
     if (oi == null) {
       // the object instance was not registered, so use the regular call back
       federateReference.provideAttributeValueUpdate(instanceHandle, theAttributes, userSuppliedTag);
     } else {
-      // convert the attribute instance handles to a set of OOattributes
-      Set<OOattribute> attributeSet = new HashSet<>();
-      for (AttributeHandle attributeHandle : theAttributes) {
-        OOattribute attribute = oi.getObjectClass().getAttributeByHandle(attributeHandle);
-        if (attribute != null) {
-          attributeSet.add(attribute);
-        }
-      }
+      try {
+        // convert the attribute instance handles to a set of OOattributes
+        Set<OOattribute> attributeSet = oi.getObjectClass().createAttributeSet(theAttributes);
 
-      federateReference.provideAttributeValueUpdate(oi.getObject(), attributeSet, userSuppliedTag);
+        federateReference.provideAttributeValueUpdate(
+            oi.getObject(), attributeSet, userSuppliedTag);
+      } catch (AttributeNotDefined ex) {
+        throw new FederateInternalError(ex.getMessage(), ex);
+      }
     }
   }
 

@@ -1,12 +1,12 @@
-package nl.tno.oorti.test.serializer.hla.rti1516e;
+package nl.tno.oorti.test.managers.hla.rti1516e;
 
-import hla.rti1516e.AttributeHandle;
+import hla.rti1516e.ParameterHandle;
 
 /**
  *
  * @author bergtwvd
  */
-public class MyAttributeHandle implements AttributeHandle {
+public class MyParameterHandle implements ParameterHandle {
 
     @Override
     public int encodedLength() {

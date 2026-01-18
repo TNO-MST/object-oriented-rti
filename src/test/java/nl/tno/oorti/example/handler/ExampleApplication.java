@@ -55,7 +55,7 @@ public class ExampleApplication extends NullOOFederateAmbassador implements Runn
 		if (sender) {
 			// publish the attributes identified by the provided String objects;
 			// the "toString" method of each object is used to identify the attribute to be published
-			Set<OOattribute> pubAttributes = oortiamb.publishObjectClass(PhysicalEntity.class, new HashSet<>(Arrays.asList("Marking", "EntityType")));
+			Set<OOattribute> pubAttributes = oortiamb.publishObjectClass(PhysicalEntity.class, Set.of("Marking", "EntityType"));
 
 			// get the OOattributes for later reference
 			OOattribute markingAttribute = CookieFunctions.getAttribute(pubAttributes, "Marking");
@@ -107,7 +107,7 @@ public class ExampleApplication extends NullOOFederateAmbassador implements Runn
 
 			// subscribe using the provided handler objects; the "toString" method of each
 			// object is used to identify the attribute to subscribe to
-			Set<OOattribute> subAttributes = oortiamb.subscribeObjectClass(PhysicalEntity.class, new HashSet<>(Arrays.asList(markingAttributeHandler, entityTypeAttributeHandler)));
+			Set<OOattribute> subAttributes = oortiamb.subscribeObjectClass(PhysicalEntity.class, Set.of(markingAttributeHandler, entityTypeAttributeHandler));
 
 			// just loop for some time
 			for (int i = 0; i < 60; i++) {

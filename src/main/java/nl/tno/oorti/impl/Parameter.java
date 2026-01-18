@@ -1,4 +1,4 @@
-package nl.tno.oorti.impl.serializer;
+package nl.tno.oorti.impl;
 
 import nl.tno.oorti.accessor.Accessor;
 import hla.rti1516e.ParameterHandle;
@@ -10,11 +10,15 @@ import nl.tno.oorti.ooencoder.OOencoder;
  */
 public class Parameter implements OOparameter {
 
+  // static properties
   private final InteractionClass interactionClass;
   private final String name;
   private final ParameterHandle parameterHandle;
   private final Accessor accessor;
   private final OOencoder encoder;
+  
+  // dynamic properties
+  private volatile Object cookie = null;
 
   Parameter(
       InteractionClass interactionClass,
@@ -34,19 +38,29 @@ public class Parameter implements OOparameter {
     return this.name;
   }
   
-  public InteractionClass getInteractionClass() {
+  InteractionClass getInteractionClass() {
     return interactionClass;
   }
 
-  public ParameterHandle getParameterHandle() {
+  ParameterHandle getParameterHandle() {
     return parameterHandle;
   }
 
-  public Accessor getAccessor() {
+  Accessor getAccessor() {
     return accessor;
   }
 
-  public OOencoder getEncoder() {
+  OOencoder getEncoder() {
     return encoder;
   }
+
+  @Override
+  public Object getCookie() {
+    return cookie;
+  }
+
+  void setCookie(Object cookie) {
+    this.cookie = cookie;
+  }
+
 }

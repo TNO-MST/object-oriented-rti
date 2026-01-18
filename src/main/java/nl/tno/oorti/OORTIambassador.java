@@ -156,7 +156,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOparameter> publishInteractionClass(Class clazz, Set<String> theParameterNames)
+  public Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> cookies)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           SaveInProgress,
@@ -175,7 +175,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<String> theParameterNames)
+  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<? extends Object> cookies)
       throws FederateServiceInvocationsAreBeingReportedViaMOM,
           InteractionClassNotDefined,
           InteractionParameterNotDefined,

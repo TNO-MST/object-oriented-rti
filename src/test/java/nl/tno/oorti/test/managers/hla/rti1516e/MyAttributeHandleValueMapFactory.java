@@ -1,4 +1,4 @@
-package nl.tno.oorti.test.serializer.hla.rti1516e;
+package nl.tno.oorti.test.managers.hla.rti1516e;
 
 import hla.rti1516e.AttributeHandleValueMap;
 import hla.rti1516e.AttributeHandleValueMapFactory;

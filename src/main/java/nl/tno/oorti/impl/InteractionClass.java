@@ -1,9 +1,10 @@
-package nl.tno.oorti.impl.serializer;
+package nl.tno.oorti.impl;
 
 import hla.rti1516e.InteractionClassHandle;
 import hla.rti1516e.ParameterHandle;
 import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.ParameterHandleValueMapFactory;
+import hla.rti1516e.exceptions.InteractionParameterNotDefined;
 import hla.rti1516e.exceptions.RTIinternalError;
 import jakarta.json.bind.JsonbBuilder;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
  */
 public class InteractionClass {
 
+  // static properties
   private final Class clazz;
   private final String name;
   private final InteractionClassHandle classHandle;
@@ -30,10 +32,11 @@ public class InteractionClass {
   private final Map<String, Parameter> name2parameter = new HashMap<>();
   private final Map<ParameterHandle, Parameter> handle2parameter = new HashMap<>();
 
+  // dynamic properties
   private final Set<OOparameter> pubParmSet = ConcurrentHashMap.newKeySet();
   private final Set<OOparameter> subParmSet = ConcurrentHashMap.newKeySet();
 
-  InteractionClass(
+  public InteractionClass(
       Class clazz,
       String className,
       InteractionClassHandle classHandle,
@@ -66,51 +69,51 @@ public class InteractionClass {
     return parameters;
   }
 
+  public Set<OOparameter> getSubscriptions() {
+    return subParmSet;
+  }
+
+  public Set<OOparameter> getPublications() {
+    return pubParmSet;
+  }
+
   public void addPublications() {
     for (Parameter parameter : this.parameters) {
+      parameter.setCookie(null);
       pubParmSet.add(parameter);
     }
   }
 
-  public void addPublications(Set<String> theParameterNames) {
-    for (String parameterName : theParameterNames) {
+  public void addPublications(Set<? extends Object> cookies) throws InteractionParameterNotDefined {
+    for (Object cookie : cookies) {
+      String parameterName = cookie.toString();
       Parameter parameter = this.name2parameter.get(parameterName);
       if (parameter != null) {
+        parameter.setCookie(cookie);
         pubParmSet.add(parameter);
-      }
+      } else
+        throw new InteractionParameterNotDefined(
+            "Unknown parameter " + parameterName + " for class " + name);
     }
   }
 
   public void addSubscriptions() {
     for (Parameter parameter : this.parameters) {
+      parameter.setCookie(null);
       subParmSet.add(parameter);
     }
   }
 
-  public void addSubscriptions(Set<String> theParameterNames) {
-    for (String parameterName : theParameterNames) {
+  public void addSubscriptions(Set<? extends Object> cookies) throws InteractionParameterNotDefined {
+    for (Object cookie : cookies) {
+      String parameterName = cookie.toString();
       Parameter parameter = this.name2parameter.get(parameterName);
       if (parameter != null) {
+        parameter.setCookie(cookie);
         subParmSet.add(parameter);
-      }
-    }
-  }
-
-  public void removePublications(Set<String> theParameterNames) {
-    for (String parameterName : theParameterNames) {
-      Parameter parameter = this.name2parameter.get(parameterName);
-      if (parameter != null) {
-        pubParmSet.remove(parameter);
-      }
-    }
-  }
-
-  public void removeSubscriptions(Set<String> theParameterNames) {
-    for (String parameterName : theParameterNames) {
-      Parameter parameter = this.name2parameter.get(parameterName);
-      if (parameter != null) {
-        subParmSet.remove(parameter);
-      }
+      } else
+        throw new InteractionParameterNotDefined(
+            "Unknown parameter " + parameterName + " for class " + name);
     }
   }
 
@@ -118,16 +121,30 @@ public class InteractionClass {
     this.pubParmSet.clear();
   }
 
+  public void removePublications(Set<String> theParameterNames) throws InteractionParameterNotDefined {
+    for (String parameterName : theParameterNames) {
+      Parameter parameter = this.name2parameter.get(parameterName);
+      if (parameter != null) {
+        pubParmSet.remove(parameter);
+      } else
+        throw new InteractionParameterNotDefined(
+            "Unknown parameter " + parameterName + " for class " + name);
+    }
+  }
+
   public void removeSubscriptions() {
     this.subParmSet.clear();
   }
 
-  public Set<OOparameter> getSubscriptions() {
-    return subParmSet;
-  }
-
-  public Set<OOparameter> getPublications() {
-    return pubParmSet;
+  public void removeSubscriptions(Set<String> theParameterNames) throws InteractionParameterNotDefined {
+    for (String parameterName : theParameterNames) {
+      Parameter parameter = this.name2parameter.get(parameterName);
+      if (parameter != null) {
+        subParmSet.remove(parameter);
+      } else
+        throw new InteractionParameterNotDefined(
+            "Unknown parameter " + parameterName + " for class " + name);
+    }
   }
 
   public ParameterHandleValueMap serialize(Object theInteraction) throws RTIinternalError {
@@ -142,7 +159,6 @@ public class InteractionClass {
       for (OOparameter ooParameter : parameterSet) {
         Parameter parameter = (Parameter) ooParameter;
 
-        // get the parameter valuea
         Object value = parameter.getAccessor().get(theInteraction);
         if (value == null) {
           // do not serialize null value; skip
@@ -150,10 +166,7 @@ public class InteractionClass {
         }
 
         try {
-          // encode the parameter value to bytes
           byte[] bytes = parameter.getEncoder().encode(value);
-
-          // add to results
           parameterValueMap.put(parameter.getParameterHandle(), bytes);
         } catch (OOcodecException ex) {
           Logger.getLogger(InteractionClass.class.getName())
@@ -176,8 +189,8 @@ public class InteractionClass {
     }
   }
 
-  public Set<OOparameter> deserialize(
-      ParameterHandleValueMap parameterValueMap, Object theInteraction) throws RTIinternalError {
+  public Set<OOparameter> deserialize(ParameterHandleValueMap parameterValueMap, Object theInteraction)
+      throws RTIinternalError {
     try {
       Set<OOparameter> parameterSet = new HashSet<>();
 
@@ -202,7 +215,7 @@ public class InteractionClass {
                     parameter.getName(),
                     parameter.getEncoder().toString(),
                     entry.getValue().length,
-                    Serializer.bytesToHex(entry.getValue())
+                    Helpers.bytesToHex(entry.getValue())
                   });
           throw new RTIinternalError(ex.getMessage(), ex);
         }

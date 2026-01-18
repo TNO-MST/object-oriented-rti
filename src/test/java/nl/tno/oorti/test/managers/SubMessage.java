@@ -1,4 +1,4 @@
-package nl.tno.oorti.test.serializer;
+package nl.tno.oorti.test.managers;
 
 /**
  *

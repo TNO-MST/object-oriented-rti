@@ -1,4 +1,4 @@
-package nl.tno.oorti.impl.serializer;
+package nl.tno.oorti.impl;
 
 import nl.tno.oorti.accessor.Accessor;
 import hla.rti1516e.AttributeHandle;
@@ -10,36 +10,32 @@ import nl.tno.oorti.ooencoder.OOencoder;
  */
 public class Attribute implements OOattribute {
 
+  // static properties
   private final ObjectClass objectClass;
   private final String name;
   private final AttributeHandle attributeHandle;
   private final Accessor accessor;
-  private final Object cookie;
-  private final OOencoder dataElementCodec;
+  private final OOencoder encoder;
+
+  // dynamic properties
+  private volatile Object cookie = null;
 
   Attribute(
       ObjectClass oc,
       String name,
       AttributeHandle attributeHandle,
-      Object cookie,
       Accessor accessor,
-      OOencoder dataElementCodec) {
+      OOencoder encoder) {
     this.objectClass = oc;
     this.name = name;
     this.attributeHandle = attributeHandle;
-    this.cookie = cookie;
     this.accessor = accessor;
-    this.dataElementCodec = dataElementCodec;
+    this.encoder = encoder;
   }
 
   @Override
   public String getName() {
     return this.name;
-  }
-
-  @Override
-  public Object getCookie() {
-    return this.cookie;
   }
 
   public ObjectClass getObjectClass() {
@@ -54,7 +50,16 @@ public class Attribute implements OOattribute {
     return accessor;
   }
 
-  public OOencoder getDataElementCodec() {
-    return dataElementCodec;
+  public OOencoder getEncoder() {
+    return encoder;
+  }
+  
+  @Override
+  public Object getCookie() {
+    return cookie;
+  }
+
+  void setCookie(Object cookie) {
+    this.cookie = cookie;
   }
 }

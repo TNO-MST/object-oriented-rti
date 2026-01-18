@@ -1,10 +1,12 @@
 package nl.tno.oorti.impl;
 
+import hla.rti1516e.AttributeHandleValueMap;
 import hla.rti1516e.CallbackModel;
 import hla.rti1516e.FederateHandle;
 import hla.rti1516e.LogicalTime;
 import hla.rti1516e.MessageRetractionReturn;
 import hla.rti1516e.ObjectInstanceHandle;
+import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.RTIambassador;
 import hla.rti1516e.exceptions.AlreadyConnected;
 import hla.rti1516e.exceptions.AttributeNotDefined;
@@ -51,13 +53,11 @@ import nl.tno.oorti.OOattribute;
 import nl.tno.oorti.OOobjectFactory;
 import nl.tno.oorti.OOparameter;
 import nl.tno.oorti.OOproperties;
+import nl.tno.oorti.accessor.AccessorFactory;
+import nl.tno.oorti.accessor.AccessorFactoryFactory;
 import nl.tno.oorti.impl.mim.objects.HLAfederation;
-import nl.tno.oorti.impl.serializer.InteractionClass;
-import nl.tno.oorti.impl.serializer.ObjectClass;
-import nl.tno.oorti.impl.serializer.ObjectInstance;
-import nl.tno.oorti.impl.serializer.SerializedInteractionData;
-import nl.tno.oorti.impl.serializer.SerializedObjectData;
-import nl.tno.oorti.impl.serializer.Serializer;
+import nl.tno.oorti.ooencoder.OOencoderFactory;
+import nl.tno.oorti.ooencoder.OOencoderFactoryFactory;
 
 /**
  * @author bergtwvd
@@ -74,9 +74,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   // the callback model used
   CallbackModel callbackModel;
 
-  // the Serializers
-  Serializer serializer;
-  Serializer momSerializer;
+  // managers
+  ObjectClassManager ocm;
+  InteractionClassManager icm;
+  ObjectInstanceManager oim;
+
+  ObjectClassManager ocmMim;
 
   // MOM related information, shared between the ambassador threads
   ObjectInstanceHandle hlaFederationInstanceHandle;
@@ -170,8 +173,17 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
             ? this.getCurrectFDD()
             : this.getCurrentFDD(additionalFomModules, currentFddModules);
 
+    AccessorFactory accessorFactory =
+        AccessorFactoryFactory.getAccessorFactory(properties.getAccessorType());
+
+    OOencoderFactory encoderFactory =
+        OOencoderFactoryFactory.getOOencoderFactory(
+            properties.getEncodingType(), accessorFactory, modules);
+
     try {
-      this.serializer = new Serializer(this.rtiamb, modules, this.objectFactory, this.properties);
+      this.ocm = new ObjectClassManager(rtiamb, accessorFactory, encoderFactory, modules);
+      this.icm = new InteractionClassManager(rtiamb, accessorFactory, encoderFactory, modules);
+      this.oim = new ObjectInstanceManager(properties);
     } catch (FederateNotExecutionMember ex) {
       throw new RTIinternalError(ex.getMessage(), ex);
     }
@@ -236,22 +248,28 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     try {
       Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Request CurrectFDD");
 
-      ObjectModelType mim =
-          OmtFunctions.readOmt(this.getClass().getResource("/foms/HLAstandardMIM.xml"));
-      this.momSerializer =
-          new Serializer(
-              this.rtiamb, new ObjectModelType[] {mim}, this.objectFactory, this.properties);
+      ObjectModelType modules[] =
+          new ObjectModelType[] {
+            OmtFunctions.readOmt(this.getClass().getResource("/foms/HLAstandardMIM.xml"))
+          };
+
+      AccessorFactory accessorFactory =
+          AccessorFactoryFactory.getAccessorFactory(properties.getAccessorType());
+
+      OOencoderFactory encoderFactory =
+          OOencoderFactoryFactory.getOOencoderFactory(
+              properties.getEncodingType(), accessorFactory, modules);
+
+      this.ocmMim = new ObjectClassManager(rtiamb, accessorFactory, encoderFactory, modules);
 
       // subscribe to MOM HLAmanager.HLAfederation to get the HLAcurrentFDD
-      ObjectClass objectClass =
-          this.momSerializer.addObjectClass(
-              false,
-              this.momSerializer.createObjectClass(HLAfederation.class, Set.of("HLAcurrentFDD")));
+      ObjectClass objectClass = this.ocmMim.create(HLAfederation.class);
+      objectClass.addSubscriptions(Set.of("HLAcurrentFDD"));
 
       synchronized (this) {
         rtiamb.subscribeObjectClassAttributes(
             objectClass.getClassHandle(),
-            objectClass.createAttributeHandleSet(objectClass.getAttributeSet()));
+            objectClass.createAttributeHandleSetFromAttributes(objectClass.getSubscriptions()));
 
         for (int i = 0; i < 1000; i++) {
           if (this.callbackModel == CallbackModel.HLA_EVOKED) {
@@ -408,6 +426,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   ////////////////////
   // Object classes //
   ////////////////////
+
   @Override
   public Set<OOattribute> publishObjectClass(Class clazz)
       throws AttributeNotDefined,
@@ -418,18 +437,14 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    if (serializer.getObjectClass(true, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
-    ObjectClass oc = serializer.createObjectClass(clazz);
-    rtiamb.publishObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSet(oc.getAttributeSet()));
-    return serializer.addObjectClass(true, oc).getAttributeSet();
+    ObjectClass oc = this.ocm.create(clazz);
+    rtiamb.publishObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
+    oc.addPublications();
+    return oc.getPublications();
   }
 
   @Override
-  public Set<OOattribute> publishObjectClass(Class clazz, Set<? extends Object> theAttributes)
+  public Set<OOattribute> publishObjectClass(Class clazz, Set<? extends Object> cookies)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -438,14 +453,13 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    if (serializer.getObjectClass(true, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
+    ObjectClass oc = this.ocm.create(clazz);
 
-    ObjectClass oc = serializer.createObjectClass(clazz, theAttributes);
     rtiamb.publishObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSet(oc.getAttributeSet()));
-    return serializer.addObjectClass(true, oc).getAttributeSet();
+        oc.getClassHandle(), oc.createAttributeHandleSetFromNames(cookies));
+
+    oc.addPublications(cookies);
+    return oc.getPublications();
   }
 
   @Override
@@ -459,10 +473,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    ObjectClass oc = serializer.getObjectClassIfExists(true, clazz);
-    rtiamb.unpublishObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSet(oc.getAttributeSet()));
-    serializer.removeObjectClass(true, oc);
+    ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
+    rtiamb.unpublishObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
+    oc.removePublications();
   }
 
   @Override
@@ -475,18 +488,14 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    if (serializer.getObjectClass(false, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
-    ObjectClass oc = serializer.createObjectClass(clazz);
-    rtiamb.subscribeObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSet(oc.getAttributeSet()));
-    return serializer.addObjectClass(false, oc).getAttributeSet();
+    ObjectClass oc = this.ocm.create(clazz);
+    rtiamb.subscribeObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
+    oc.addPublications();
+    return oc.getPublications();
   }
 
   @Override
-  public Set<OOattribute> subscribeObjectClass(Class clazz, Set<? extends Object> theAttributes)
+  public Set<OOattribute> subscribeObjectClass(Class clazz, Set<? extends Object> cookies)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -495,14 +504,11 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    if (serializer.getObjectClass(false, clazz) != null) {
-      throw new RTIinternalError("Class " + clazz.getSimpleName() + " already created");
-    }
-
-    ObjectClass oc = serializer.createObjectClass(clazz, theAttributes);
+    ObjectClass oc = this.ocm.create(clazz);
     rtiamb.subscribeObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSet(oc.getAttributeSet()));
-    return serializer.addObjectClass(false, oc).getAttributeSet();
+        oc.getClassHandle(), oc.createAttributeHandleSetFromNames(cookies));
+    oc.addPublications(cookies);
+    return oc.getPublications();
   }
 
   @Override
@@ -515,16 +521,16 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    ObjectClass oc = serializer.getObjectClassIfExists(false, clazz);
+    ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.unsubscribeObjectClass(oc.getClassHandle());
-    serializer.removeObjectClass(false, oc);
+    oc.removeSubscriptions();
 
     // also delete all remote object instances of this class
-    for (ObjectInstance oi : serializer.getObjectInstances()) {
+    for (ObjectInstance oi : this.oim.getObjectInstances()) {
       if (oi.getObjectClass().equals(oc)) {
         try {
           rtiamb.localDeleteObjectInstance(oi.getInstanceHandle());
-          serializer.removeObjectInstance(oi);
+          this.oim.removeObjectInstance(oi);
         } catch (OwnershipAcquisitionPending | FederateOwnsAttributes | ObjectInstanceNotKnown ex) {
           // ignore these exceptions and continue with the next object instance
         }
@@ -545,14 +551,14 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RTIinternalError,
           InteractionParameterNotDefined {
 
-    InteractionClass interactionClass = serializer.createInteractionClass(clazz);
+    InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
     interactionClass.addPublications();
     return interactionClass.getPublications();
   }
 
   @Override
-  public Set<OOparameter> publishInteractionClass(Class clazz, Set<String> theParameterNames)
+  public Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> cookies)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -561,9 +567,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RestoreInProgress,
           InteractionParameterNotDefined {
 
-    InteractionClass interactionClass = serializer.createInteractionClass(clazz);
+    InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
-    interactionClass.addPublications(theParameterNames);
+    interactionClass.addPublications(cookies);
     return interactionClass.getPublications();
   }
 
@@ -576,7 +582,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    InteractionClass interactionClass = serializer.getInteractionClassIfExists(clazz);
+    InteractionClass interactionClass = this.icm.getInteractionClassIfExists(clazz);
     rtiamb.unpublishInteractionClass(interactionClass.getClassHandle());
     interactionClass.removePublications();
   }
@@ -592,14 +598,14 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           SaveInProgress,
           RestoreInProgress {
 
-    InteractionClass interactionClass = serializer.createInteractionClass(clazz);
+    InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
     interactionClass.addSubscriptions();
     return interactionClass.getSubscriptions();
   }
 
   @Override
-  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<String> theParameterNames)
+  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<? extends Object> cookies)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -609,9 +615,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           SaveInProgress,
           RestoreInProgress {
 
-    InteractionClass interactionClass = serializer.createInteractionClass(clazz);
+    InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
-    interactionClass.addSubscriptions(theParameterNames);
+    interactionClass.addSubscriptions(cookies);
     return interactionClass.getSubscriptions();
   }
 
@@ -624,7 +630,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    InteractionClass interactionClass = serializer.getInteractionClassIfExists(clazz);
+    InteractionClass interactionClass = this.icm.getInteractionClassIfExists(clazz);
     rtiamb.unsubscribeInteractionClass(interactionClass.getClassHandle());
     interactionClass.removeSubscriptions();
   }
@@ -642,11 +648,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectClass oc =
-        serializer.getObjectClassIfExists(true, this.objectFactory.getObjectClass(theObject));
+    ObjectClass oc = this.ocm.getObjectClassIfExists(this.objectFactory.getObjectClass(theObject));
     ObjectInstanceHandle instanceHandle = rtiamb.registerObjectInstance(oc.getClassHandle());
-    serializer.createObjectInstance(
-        oc, instanceHandle, theObject, rtiamb.getObjectInstanceName(instanceHandle));
+    this.oim.create(oc, instanceHandle, theObject, rtiamb.getObjectInstanceName(instanceHandle));
   }
 
   @Override
@@ -659,10 +663,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedObjectData objectData =
-        serializer.serializeObject(theObjectName, theObject, new SerializedObjectData());
-    rtiamb.updateAttributeValues(
-        objectData.getInstanceHandle(), objectData.getAttributeValueMap(), userSuppliedTag);
+
+    ObjectInstance oi = oim.getObjectInstanceIfExists(theObjectName);
+    AttributeHandleValueMap map = oi.serialize(theObject);
+    rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
   }
 
   @Override
@@ -675,10 +679,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedObjectData objectData =
-        serializer.serializeObject(theObject, new SerializedObjectData());
-    rtiamb.updateAttributeValues(
-        objectData.getInstanceHandle(), objectData.getAttributeValueMap(), userSuppliedTag);
+
+    ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleValueMap map = oi.serialize();
+    rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
   }
 
   @Override
@@ -692,10 +696,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedObjectData objectData =
-        serializer.serializeObject(theObject, theAttributes, new SerializedObjectData());
-    rtiamb.updateAttributeValues(
-        objectData.getInstanceHandle(), objectData.getAttributeValueMap(), userSuppliedTag);
+
+    ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleValueMap map = oi.serialize(theAttributes);
+    rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
   }
 
   @Override
@@ -710,13 +714,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedObjectData objectData =
-        serializer.serializeObject(theObject, new SerializedObjectData());
-    return rtiamb.updateAttributeValues(
-        objectData.getInstanceHandle(),
-        objectData.getAttributeValueMap(),
-        userSuppliedTag,
-        theTime);
+
+    ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleValueMap map = oi.serialize();
+    return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
   }
 
   @Override
@@ -731,13 +732,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedObjectData objectData =
-        serializer.serializeObject(theObjectName, theObject, new SerializedObjectData());
-    return rtiamb.updateAttributeValues(
-        objectData.getInstanceHandle(),
-        objectData.getAttributeValueMap(),
-        userSuppliedTag,
-        theTime);
+
+    ObjectInstance oi = oim.getObjectInstanceIfExists(theObjectName);
+    AttributeHandleValueMap map = oi.serialize(theObject);
+    return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
   }
 
   @Override
@@ -752,13 +750,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedObjectData objectData =
-        serializer.serializeObject(theObject, theAttributes, new SerializedObjectData());
-    return rtiamb.updateAttributeValues(
-        objectData.getInstanceHandle(),
-        objectData.getAttributeValueMap(),
-        userSuppliedTag,
-        theTime);
+
+    ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleValueMap map = oi.serialize(theAttributes);
+    return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
   }
 
   @Override
@@ -770,9 +765,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectInstance oi = serializer.getObjectInstanceIfExists(theObject);
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag);
-    serializer.removeObjectInstance(oi);
+    this.oim.removeObjectInstance(oi);
   }
 
   @Override
@@ -784,9 +780,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectInstance oi = serializer.getObjectInstanceIfExists(theObjectName);
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObjectName);
     rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag);
-    serializer.removeObjectInstance(oi);
+    this.oim.removeObjectInstance(oi);
   }
 
   @Override
@@ -800,10 +796,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectInstance oi = serializer.getObjectInstanceIfExists(theObject);
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     MessageRetractionReturn retraction =
         rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag, theTime);
-    serializer.removeObjectInstance(oi);
+    this.oim.removeObjectInstance(oi);
     return retraction;
   }
 
@@ -818,10 +814,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectInstance oi = serializer.getObjectInstanceIfExists(theObjectName);
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObjectName);
     MessageRetractionReturn retraction =
         rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag, theTime);
-    serializer.removeObjectInstance(oi);
+    this.oim.removeObjectInstance(oi);
     return retraction;
   }
 
@@ -834,9 +830,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectClass oc = serializer.getObjectClassIfExists(false, clazz);
+    ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.requestAttributeValueUpdate(
-        oc.getClassHandle(), oc.createAttributeHandleSet(oc.getAttributeSet()), userSuppliedTag);
+        oc.getClassHandle(), oc.createAttributeHandleSet(), userSuppliedTag);
   }
 
   @Override
@@ -849,9 +845,11 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectClass oc = serializer.getObjectClassIfExists(false, clazz);
+    ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.requestAttributeValueUpdate(
-        oc.getClassHandle(), oc.createAttributeHandleSet(theAttributes), userSuppliedTag);
+        oc.getClassHandle(),
+        oc.createAttributeHandleSetFromAttributes(theAttributes),
+        userSuppliedTag);
   }
 
   @Override
@@ -863,11 +861,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectInstance oi = serializer.getObjectInstanceIfExists(theObject);
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     rtiamb.requestAttributeValueUpdate(
-        oi.getInstanceHandle(),
-        oi.getObjectClass().createAttributeHandleSet(oi.getObjectClass().getAttributeSet()),
-        userSuppliedTag);
+        oi.getInstanceHandle(), oi.getObjectClass().createAttributeHandleSet(), userSuppliedTag);
   }
 
   @Override
@@ -880,10 +876,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    ObjectInstance oi = serializer.getObjectInstanceIfExists(theObject);
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     rtiamb.requestAttributeValueUpdate(
         oi.getInstanceHandle(),
-        oi.getObjectClass().createAttributeHandleSet(theAttributes),
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes),
         userSuppliedTag);
   }
 
@@ -897,10 +893,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedInteractionData interactionData =
-        serializer.serializeInteraction(theInteraction, new SerializedInteractionData());
-    rtiamb.sendInteraction(
-        interactionData.getClassHandle(), interactionData.getParameterValueMap(), userSuppliedTag);
+
+    InteractionClass ic =
+        icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
+
+    ParameterHandleValueMap map = ic.serialize(theInteraction);
+    rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag);
   }
 
   @Override
@@ -914,11 +912,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedInteractionData interactionData =
-        serializer.serializeInteraction(
-            theInteraction, theParameters, new SerializedInteractionData());
-    rtiamb.sendInteraction(
-        interactionData.getClassHandle(), interactionData.getParameterValueMap(), userSuppliedTag);
+
+    InteractionClass ic =
+        icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
+
+    ParameterHandleValueMap map = ic.serialize(theInteraction, theParameters);
+    rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag);
   }
 
   @Override
@@ -933,13 +932,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedInteractionData interactionData =
-        serializer.serializeInteraction(theInteraction, new SerializedInteractionData());
-    return rtiamb.sendInteraction(
-        interactionData.getClassHandle(),
-        interactionData.getParameterValueMap(),
-        userSuppliedTag,
-        theTime);
+
+    InteractionClass ic =
+        icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
+
+    ParameterHandleValueMap map = ic.serialize(theInteraction);
+    return rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag, theTime);
   }
 
   @Override
@@ -957,14 +955,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
-    SerializedInteractionData interactionData =
-        serializer.serializeInteraction(
-            theInteraction, theParameters, new SerializedInteractionData());
-    return rtiamb.sendInteraction(
-        interactionData.getClassHandle(),
-        interactionData.getParameterValueMap(),
-        userSuppliedTag,
-        theTime);
+
+    InteractionClass ic =
+        icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
+
+    ParameterHandleValueMap map = ic.serialize(theInteraction, theParameters);
+    return rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag, theTime);
   }
 
   //////////////////////////
@@ -972,11 +968,11 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   //////////////////////////
   @Override
   public String getObjectName(Object theObject) throws ObjectInstanceNotKnown {
-    return this.serializer.getObjectInstanceIfExists(theObject).getName();
+    return this.oim.getObjectInstanceIfExists(theObject).getName();
   }
 
   @Override
   public Object getObject(String theObjectName) throws ObjectInstanceNotKnown {
-    return this.serializer.getObjectInstanceIfExists(theObjectName).getObject();
+    return this.oim.getObjectInstanceIfExists(theObjectName).getObject();
   }
 }

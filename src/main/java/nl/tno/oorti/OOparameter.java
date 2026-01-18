@@ -9,4 +9,5 @@ public interface OOparameter {
 
   public String getName();
 
+  public Object getCookie();
 }

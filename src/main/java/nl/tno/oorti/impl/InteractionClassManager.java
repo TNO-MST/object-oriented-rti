@@ -1,4 +1,4 @@
-package nl.tno.oorti.impl.serializer;
+package nl.tno.oorti.impl;
 
 import hla.rti1516e.InteractionClassHandle;
 import hla.rti1516e.ParameterHandle;
@@ -34,12 +34,14 @@ import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
  */
 public class InteractionClassManager {
 
+  // static properties
   private final RTIambassador rtiamb;
   private final AccessorFactory accessorFactory;
   private final OOencoderFactory encoderFactory;
   private final ObjectModelType[] modules;
   private final ParameterHandleValueMapFactory paramHVMFactory;
 
+  // dynamic properties
   private final Map<Class, InteractionClass> clazz2class = new ConcurrentHashMap<>();
   private final Map<InteractionClassHandle, InteractionClass> handle2class =
       new ConcurrentHashMap<>();
@@ -58,27 +60,20 @@ public class InteractionClassManager {
     this.paramHVMFactory = rtiamb.getParameterHandleValueMapFactory();
   }
 
-  public InteractionClass get(Class clazz)
+  public InteractionClass create(Class clazz)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
           InteractionClassNotDefined,
           InteractionParameterNotDefined {
-    InteractionClass ic = this.clazz2class.get(clazz);
-    return (ic == null) ? this.create(clazz) : ic;
-  }
 
-  private InteractionClass create(Class clazz)
-      throws FederateNotExecutionMember,
-          NotConnected,
-          RTIinternalError,
-          InteractionClassNotDefined,
-          InteractionParameterNotDefined {
+    InteractionClass ic = this.clazz2class.get(clazz);
+    if (ic != null) return ic;
+
     try {
-      String fqClassName = Serializer.getFullyQualifiedInteractionClassName(clazz);
+      String fqClassName = Helpers.getFullyQualifiedInteractionClassName(clazz);
       InteractionClassHandle classHandle = rtiamb.getInteractionClassHandle(fqClassName);
-      InteractionClass ic =
-          new InteractionClass(clazz, fqClassName, classHandle, this.paramHVMFactory);
+      ic = new InteractionClass(clazz, fqClassName, classHandle, this.paramHVMFactory);
 
       this.createParameterSet(ic);
 
@@ -91,13 +86,7 @@ public class InteractionClassManager {
     }
   }
 
-  /**
-   * This method returns the OMT parameter, given its name, or null when none found.
-   *
-   * @param attributes
-   * @param name
-   * @return
-   */
+  /** This method returns the OMT parameter, given its name, or null when none found. */
   private nl.tno.omt.Parameter getOmtParameterByName(
       Set<nl.tno.omt.Parameter> parameters, String name) {
     for (nl.tno.omt.Parameter parameter : parameters) {
@@ -169,5 +158,13 @@ public class InteractionClassManager {
 
   public InteractionClass getClassByHandle(InteractionClassHandle classHandle) {
     return handle2class.get(classHandle);
+  }
+
+  public InteractionClass getInteractionClassIfExists(Class clazz)
+      throws InteractionClassNotDefined {
+    InteractionClass ic = clazz2class.get(clazz);
+    if (ic == null) {
+      throw new InteractionClassNotDefined("Unknown class " + clazz.getSimpleName());
+    } else return ic;
   }
 }
