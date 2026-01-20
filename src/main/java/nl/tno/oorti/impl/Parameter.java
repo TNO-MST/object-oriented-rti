@@ -10,23 +10,20 @@ import nl.tno.oorti.ooencoder.OOencoder;
  */
 public class Parameter implements OOparameter {
 
-  // static properties
-  private final InteractionClass interactionClass;
+  // immutable properties
   private final String name;
   private final ParameterHandle parameterHandle;
   private final Accessor accessor;
   private final OOencoder encoder;
   
-  // dynamic properties
+  // mutable properties
   private volatile Object cookie = null;
 
   Parameter(
-      InteractionClass interactionClass,
       String name,
       ParameterHandle parameterHandle,
       Accessor accessor,
       OOencoder encoder) {
-    this.interactionClass = interactionClass;
     this.name = name;
     this.parameterHandle = parameterHandle;
     this.accessor = accessor;
@@ -36,10 +33,6 @@ public class Parameter implements OOparameter {
   @Override
   public String getName() {
     return this.name;
-  }
-  
-  InteractionClass getInteractionClass() {
-    return interactionClass;
   }
 
   ParameterHandle getParameterHandle() {
@@ -59,7 +52,8 @@ public class Parameter implements OOparameter {
     return cookie;
   }
 
-  void setCookie(Object cookie) {
+  @Override
+  public void setCookie(Object cookie) {
     this.cookie = cookie;
   }
 

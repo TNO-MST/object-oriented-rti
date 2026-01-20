@@ -412,7 +412,23 @@ public interface OORTIambassador extends RTIambassador {
   //////////////////////////
   // RTI Support Services //
   //////////////////////////
-  public String getObjectName(Object theObject) throws ObjectInstanceNotKnown;
+  public String getObjectName(Object theObject)
+      throws ObjectInstanceNotKnown, FederateNotExecutionMember, NotConnected, RTIinternalError;
 
-  public Object getObject(String theObjectName) throws ObjectInstanceNotKnown;  
+  public Object getObject(String theObjectName)
+      throws ObjectInstanceNotKnown, FederateNotExecutionMember, NotConnected, RTIinternalError;
+
+  public OOattribute getAttribute(Class clazz, String attributeName)
+      throws ObjectClassNotDefined,
+          AttributeNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  public OOparameter getParameter(Class clazz, String parameterName)
+      throws InteractionClassNotDefined,
+          InteractionParameterNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
 }

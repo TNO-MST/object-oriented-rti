@@ -47,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import nl.tno.omt.ObjectModelType;
 import nl.tno.omt.helpers.OmtFunctions;
+import nl.tno.omt.helpers.OmtJavaMapping;
 import nl.tno.oorti.OOFederateAmbassador;
 import nl.tno.oorti.OORTIambassador;
 import nl.tno.oorti.OOattribute;
@@ -78,7 +79,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   ObjectClassManager ocm;
   InteractionClassManager icm;
   ObjectInstanceManager oim;
-
+  
+  // manager for the MIM
   ObjectClassManager ocmMim;
 
   // MOM related information, shared between the ambassador threads
@@ -437,6 +439,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectClass oc = this.ocm.create(clazz);
     rtiamb.publishObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
     oc.addPublications();
@@ -452,6 +456,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectClass oc = this.ocm.create(clazz);
 
@@ -473,6 +479,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.unpublishObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
     oc.removePublications();
@@ -487,6 +495,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectClass oc = this.ocm.create(clazz);
     rtiamb.subscribeObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
@@ -504,6 +514,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectClass oc = this.ocm.create(clazz);
     rtiamb.subscribeObjectClassAttributes(
         oc.getClassHandle(), oc.createAttributeHandleSetFromNames(cookies));
@@ -520,6 +532,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.unsubscribeObjectClass(oc.getClassHandle());
@@ -551,6 +565,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RTIinternalError,
           InteractionParameterNotDefined {
 
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
     interactionClass.addPublications();
@@ -567,6 +583,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RestoreInProgress,
           InteractionParameterNotDefined {
 
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
     interactionClass.addPublications(cookies);
@@ -581,6 +599,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     InteractionClass interactionClass = this.icm.getInteractionClassIfExists(clazz);
     rtiamb.unpublishInteractionClass(interactionClass.getClassHandle());
@@ -597,6 +617,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateServiceInvocationsAreBeingReportedViaMOM,
           SaveInProgress,
           RestoreInProgress {
+
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
@@ -615,6 +637,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           SaveInProgress,
           RestoreInProgress {
 
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     InteractionClass interactionClass = this.icm.create(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
     interactionClass.addSubscriptions(cookies);
@@ -629,6 +653,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     InteractionClass interactionClass = this.icm.getInteractionClassIfExists(clazz);
     rtiamb.unsubscribeInteractionClass(interactionClass.getClassHandle());
@@ -648,6 +674,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectClass oc = this.ocm.getObjectClassIfExists(this.objectFactory.getObjectClass(theObject));
     ObjectInstanceHandle instanceHandle = rtiamb.registerObjectInstance(oc.getClassHandle());
     this.oim.create(oc, instanceHandle, theObject, rtiamb.getObjectInstanceName(instanceHandle));
@@ -664,6 +693,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObjectName);
     AttributeHandleValueMap map = oi.serialize(theObject);
     rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
@@ -679,6 +710,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
     AttributeHandleValueMap map = oi.serialize();
@@ -697,6 +730,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
     AttributeHandleValueMap map = oi.serialize(theAttributes);
     rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
@@ -714,6 +749,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
     AttributeHandleValueMap map = oi.serialize();
@@ -733,6 +770,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObjectName);
     AttributeHandleValueMap map = oi.serialize(theObject);
     return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
@@ -751,6 +790,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
     AttributeHandleValueMap map = oi.serialize(theAttributes);
     return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
@@ -766,6 +807,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag);
     this.oim.removeObjectInstance(oi);
@@ -780,6 +823,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObjectName);
     rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag);
     this.oim.removeObjectInstance(oi);
@@ -796,6 +842,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     MessageRetractionReturn retraction =
         rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag, theTime);
@@ -814,6 +863,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObjectName);
     MessageRetractionReturn retraction =
         rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag, theTime);
@@ -830,6 +882,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.requestAttributeValueUpdate(
         oc.getClassHandle(), oc.createAttributeHandleSet(), userSuppliedTag);
@@ -845,6 +900,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectClass oc = this.ocm.getObjectClassIfExists(clazz);
     rtiamb.requestAttributeValueUpdate(
         oc.getClassHandle(),
@@ -861,6 +919,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     rtiamb.requestAttributeValueUpdate(
         oi.getInstanceHandle(), oi.getObjectClass().createAttributeHandleSet(), userSuppliedTag);
@@ -876,6 +937,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
     rtiamb.requestAttributeValueUpdate(
         oi.getInstanceHandle(),
@@ -893,6 +957,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
@@ -913,6 +979,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
 
@@ -932,6 +1000,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError {
+
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
@@ -956,6 +1026,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
 
@@ -967,12 +1039,44 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   // RTI Support Services //
   //////////////////////////
   @Override
-  public String getObjectName(Object theObject) throws ObjectInstanceNotKnown {
-    return this.oim.getObjectInstanceIfExists(theObject).getName();
+  public String getObjectName(Object theObject)
+      throws ObjectInstanceNotKnown, FederateNotExecutionMember {
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+    else return this.oim.getObjectInstanceIfExists(theObject).getName();
   }
 
   @Override
-  public Object getObject(String theObjectName) throws ObjectInstanceNotKnown {
-    return this.oim.getObjectInstanceIfExists(theObjectName).getObject();
+  public Object getObject(String theObjectName)
+      throws ObjectInstanceNotKnown, FederateNotExecutionMember {
+    if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
+    else return this.oim.getObjectInstanceIfExists(theObjectName).getObject();
+  }
+
+  @Override
+  public OOattribute getAttribute(Class clazz, String attributeName)
+      throws ObjectClassNotDefined,
+          AttributeNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+    if (this.ocm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+    else
+      return this.ocm
+          .create(clazz)
+          .getAttributeByNameIfExists(OmtJavaMapping.toOmtName(attributeName));
+  }
+
+  @Override
+  public OOparameter getParameter(Class clazz, String parameterName)
+      throws InteractionClassNotDefined,
+          InteractionParameterNotDefined,
+          NotConnected,
+          RTIinternalError,
+          FederateNotExecutionMember {
+    if (this.icm == null) throw new FederateNotExecutionMember("Not initialized yet.");
+    else
+      return this.icm
+          .create(clazz)
+          .getParameterByNameIfExists(OmtJavaMapping.toOmtName(parameterName));
   }
 }

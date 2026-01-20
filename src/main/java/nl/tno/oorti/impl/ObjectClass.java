@@ -18,17 +18,17 @@ import nl.tno.oorti.OOattribute;
  */
 public class ObjectClass {
 
-  // static properties
+  // immutable properties
   private final Class clazz;
   private final String name;
   private final ObjectClassHandle classHandle;
+  private final Set<Attribute> attributes;
   private final AttributeHandleValueMapFactory ahvmFactory;
   private final AttributeHandleSetFactory ahsFactory;
-  private final Set<Attribute> attributes = new HashSet<>();
   private final Map<String, Attribute> name2attribute = new HashMap<>();
   private final Map<AttributeHandle, Attribute> handle2attribute = new HashMap<>();
 
-  // dynamic properties
+  // mutable properties
   private final Set<OOattribute> pubAttributeSet = ConcurrentHashMap.newKeySet();
   private final Set<OOattribute> subAttributeSet = ConcurrentHashMap.newKeySet();
 
@@ -36,19 +36,20 @@ public class ObjectClass {
       Class clazz,
       String name,
       ObjectClassHandle classHandle,
+      Set<Attribute> attributeSet,
       AttributeHandleValueMapFactory ahvmFactory,
       AttributeHandleSetFactory ahsFactory) {
     this.clazz = clazz;
     this.name = name;
     this.classHandle = classHandle;
+    this.attributes = attributeSet;
     this.ahvmFactory = ahvmFactory;
     this.ahsFactory = ahsFactory;
-  }
 
-  void addAttribute(Attribute attribute) {
-    attributes.add(attribute);
-    name2attribute.put(attribute.getName(), attribute);
-    handle2attribute.put(attribute.getAttributeHandle(), attribute);
+    for (Attribute attribute : attributeSet) {
+      name2attribute.put(attribute.getName(), attribute);
+      handle2attribute.put(attribute.getAttributeHandle(), attribute);
+    }
   }
 
   public Class getClazz() {
@@ -75,8 +76,20 @@ public class ObjectClass {
     return this.name2attribute.get(name);
   }
 
+  public Attribute getAttributeByNameIfExists(String name) throws AttributeNotDefined {
+    Attribute attribute = name2attribute.get(name);
+    if (attribute != null) return attribute;
+    else throw new AttributeNotDefined(name);
+  }
+
   public Attribute getAttributeByHandle(AttributeHandle handle) {
     return this.handle2attribute.get(handle);
+  }
+  
+  public Attribute getAttributeByHandleIfExists(AttributeHandle handle) throws AttributeNotDefined {
+    Attribute attribute = handle2attribute.get(handle);
+    if (attribute != null) return attribute;
+    else throw new AttributeNotDefined(handle.toString());
   }
 
   public Set<OOattribute> getSubscriptions() {
@@ -89,7 +102,6 @@ public class ObjectClass {
 
   public void addPublications() {
     for (Attribute attribute : this.attributes) {
-      attribute.setCookie(null);
       pubAttributeSet.add(attribute);
     }
   }
@@ -108,7 +120,6 @@ public class ObjectClass {
 
   public void addSubscriptions() {
     for (Attribute attribute : this.attributes) {
-      attribute.setCookie(null);
       subAttributeSet.add(attribute);
     }
   }

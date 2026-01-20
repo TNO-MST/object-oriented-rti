@@ -80,7 +80,7 @@ public class TestSerializerObject extends NullFederateAmbassador {
           SaveInProgress,
           RestoreInProgress,
           ObjectInstanceNotKnown {
-
+    
     ObjectClassManager ocm =
         new ObjectClassManager(rtiamb, accessorFactory, encoderFactory, modules);
 

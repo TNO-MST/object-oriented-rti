@@ -23,16 +23,16 @@ import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
  */
 public class InteractionClass {
 
-  // static properties
+  // immutable properties
   private final Class clazz;
   private final String name;
   private final InteractionClassHandle classHandle;
+  private final Set<Parameter> parameters;
   private final ParameterHandleValueMapFactory factory;
-  private final Set<Parameter> parameters = new HashSet<>();
   private final Map<String, Parameter> name2parameter = new HashMap<>();
   private final Map<ParameterHandle, Parameter> handle2parameter = new HashMap<>();
 
-  // dynamic properties
+  // mutable properties
   private final Set<OOparameter> pubParmSet = ConcurrentHashMap.newKeySet();
   private final Set<OOparameter> subParmSet = ConcurrentHashMap.newKeySet();
 
@@ -40,17 +40,18 @@ public class InteractionClass {
       Class clazz,
       String className,
       InteractionClassHandle classHandle,
+      Set<Parameter> parameterSet,
       ParameterHandleValueMapFactory factory) {
     this.clazz = clazz;
     this.name = className;
     this.classHandle = classHandle;
+    this.parameters = parameterSet;
     this.factory = factory;
-  }
 
-  void addParameter(Parameter parameter) {
-    parameters.add(parameter);
-    name2parameter.put(parameter.getName(), parameter);
-    handle2parameter.put(parameter.getParameterHandle(), parameter);
+    for (Parameter parameter : parameterSet) {
+      name2parameter.put(parameter.getName(), parameter);
+      handle2parameter.put(parameter.getParameterHandle(), parameter);
+    }
   }
 
   public Class getClazz() {
@@ -69,6 +70,16 @@ public class InteractionClass {
     return parameters;
   }
 
+  public Parameter getParameterByName(String name) {
+    return this.name2parameter.get(name);
+  }
+
+  public Parameter getParameterByNameIfExists(String name) throws InteractionParameterNotDefined {
+    Parameter paraneter = name2parameter.get(name);
+    if (paraneter != null) return paraneter;
+    else throw new InteractionParameterNotDefined(name);
+  }
+
   public Set<OOparameter> getSubscriptions() {
     return subParmSet;
   }
@@ -79,7 +90,6 @@ public class InteractionClass {
 
   public void addPublications() {
     for (Parameter parameter : this.parameters) {
-      parameter.setCookie(null);
       pubParmSet.add(parameter);
     }
   }
@@ -99,12 +109,12 @@ public class InteractionClass {
 
   public void addSubscriptions() {
     for (Parameter parameter : this.parameters) {
-      parameter.setCookie(null);
       subParmSet.add(parameter);
     }
   }
 
-  public void addSubscriptions(Set<? extends Object> cookies) throws InteractionParameterNotDefined {
+  public void addSubscriptions(Set<? extends Object> cookies)
+      throws InteractionParameterNotDefined {
     for (Object cookie : cookies) {
       String parameterName = cookie.toString();
       Parameter parameter = this.name2parameter.get(parameterName);
@@ -121,7 +131,8 @@ public class InteractionClass {
     this.pubParmSet.clear();
   }
 
-  public void removePublications(Set<String> theParameterNames) throws InteractionParameterNotDefined {
+  public void removePublications(Set<String> theParameterNames)
+      throws InteractionParameterNotDefined {
     for (String parameterName : theParameterNames) {
       Parameter parameter = this.name2parameter.get(parameterName);
       if (parameter != null) {
@@ -136,7 +147,8 @@ public class InteractionClass {
     this.subParmSet.clear();
   }
 
-  public void removeSubscriptions(Set<String> theParameterNames) throws InteractionParameterNotDefined {
+  public void removeSubscriptions(Set<String> theParameterNames)
+      throws InteractionParameterNotDefined {
     for (String parameterName : theParameterNames) {
       Parameter parameter = this.name2parameter.get(parameterName);
       if (parameter != null) {
@@ -189,8 +201,8 @@ public class InteractionClass {
     }
   }
 
-  public Set<OOparameter> deserialize(ParameterHandleValueMap parameterValueMap, Object theInteraction)
-      throws RTIinternalError {
+  public Set<OOparameter> deserialize(
+      ParameterHandleValueMap parameterValueMap, Object theInteraction) throws RTIinternalError {
     try {
       Set<OOparameter> parameterSet = new HashSet<>();
 

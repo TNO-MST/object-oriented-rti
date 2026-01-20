@@ -10,23 +10,20 @@ import nl.tno.oorti.ooencoder.OOencoder;
  */
 public class Attribute implements OOattribute {
 
-  // static properties
-  private final ObjectClass objectClass;
+  // immutable properties
   private final String name;
   private final AttributeHandle attributeHandle;
   private final Accessor accessor;
   private final OOencoder encoder;
 
-  // dynamic properties
+  // mutable properties
   private volatile Object cookie = null;
 
   Attribute(
-      ObjectClass oc,
       String name,
       AttributeHandle attributeHandle,
       Accessor accessor,
       OOencoder encoder) {
-    this.objectClass = oc;
     this.name = name;
     this.attributeHandle = attributeHandle;
     this.accessor = accessor;
@@ -36,10 +33,6 @@ public class Attribute implements OOattribute {
   @Override
   public String getName() {
     return this.name;
-  }
-
-  public ObjectClass getObjectClass() {
-    return objectClass;
   }
 
   public AttributeHandle getAttributeHandle() {
@@ -59,7 +52,8 @@ public class Attribute implements OOattribute {
     return cookie;
   }
 
-  void setCookie(Object cookie) {
+  @Override
+  public void setCookie(Object cookie) {
     this.cookie = cookie;
   }
 }

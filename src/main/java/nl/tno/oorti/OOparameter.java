@@ -10,4 +10,6 @@ public interface OOparameter {
   public String getName();
 
   public Object getCookie();
+  
+  public void setCookie(Object cookie);
 }

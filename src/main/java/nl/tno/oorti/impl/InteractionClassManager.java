@@ -13,6 +13,7 @@ import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.RTIinternalError;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,14 +35,15 @@ import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
  */
 public class InteractionClassManager {
 
-  // static properties
+  // immutable properties
   private final RTIambassador rtiamb;
   private final AccessorFactory accessorFactory;
   private final OOencoderFactory encoderFactory;
   private final ObjectModelType[] modules;
+  private final ParameterManager pam;
   private final ParameterHandleValueMapFactory paramHVMFactory;
 
-  // dynamic properties
+  // mutable properties
   private final Map<Class, InteractionClass> clazz2class = new ConcurrentHashMap<>();
   private final Map<InteractionClassHandle, InteractionClass> handle2class =
       new ConcurrentHashMap<>();
@@ -53,6 +55,7 @@ public class InteractionClassManager {
       ObjectModelType[] modules)
       throws FederateNotExecutionMember, NotConnected {
 
+    this.pam = new ParameterManager();
     this.rtiamb = rtiamb;
     this.accessorFactory = accessorFactory;
     this.encoderFactory = encoderFactory;
@@ -71,11 +74,11 @@ public class InteractionClassManager {
     if (ic != null) return ic;
 
     try {
-      String fqClassName = Helpers.getFullyQualifiedInteractionClassName(clazz);
-      InteractionClassHandle classHandle = rtiamb.getInteractionClassHandle(fqClassName);
-      ic = new InteractionClass(clazz, fqClassName, classHandle, this.paramHVMFactory);
+      String className = Helpers.getFullyQualifiedInteractionClassName(clazz);
+      InteractionClassHandle classHandle = rtiamb.getInteractionClassHandle(className);
+      Set<Parameter> parameterSet = this.createParameterSet(clazz, className, classHandle);
 
-      this.createParameterSet(ic);
+      ic = new InteractionClass(clazz, className, classHandle, parameterSet, this.paramHVMFactory);
 
       clazz2class.put(ic.getClazz(), ic);
       handle2class.put(ic.getClassHandle(), ic);
@@ -97,7 +100,8 @@ public class InteractionClassManager {
     return null;
   }
 
-  private void createParameterSet(InteractionClass ic)
+  private Set<Parameter> createParameterSet(
+      Class clazz, String className, InteractionClassHandle classHandle)
       throws InteractionClassNotDefined,
           RTIinternalError,
           FederateNotExecutionMember,
@@ -106,14 +110,16 @@ public class InteractionClassManager {
 
     // get the parameters as defined in the FOM
     Set<nl.tno.omt.Parameter> omtParameters =
-        OmtFunctions.getInteractionClassParameters(modules, ic.getName());
+        OmtFunctions.getInteractionClassParameters(modules, className);
     if (omtParameters == null) {
       // something went wrong
-      throw new InteractionClassNotDefined("Cannot get parameters of Class " + ic.getName());
+      throw new InteractionClassNotDefined("Cannot get parameters of Class " + className);
     }
 
     // create a parameter for each Java class field
-    Collection<Field> fields = ClassUtils.getFields(ic.getClazz());
+    Collection<Field> fields = ClassUtils.getFields(clazz);
+
+    Set<Parameter> parameterSet = new HashSet<>();
 
     for (Field field : fields) {
       try {
@@ -128,20 +134,22 @@ public class InteractionClassManager {
               "Java Class attribute " + field.getName() + " not defined in FOM");
         }
 
-        // create accessor for the Java Class field
-        Accessor accessor = accessorFactory.createAccessor(field);
+        ParameterHandle parameterHandle = rtiamb.getParameterHandle(classHandle, parameterName);
 
-        // create codec for the Java Class field
-        OOencoder codec =
-            encoderFactory.createOOencoder(
-                field.getGenericType(), omtParameter.getDataType().getValue());
+        Parameter parameter = pam.getParameterByHandle(parameterHandle);
+        if (parameter == null) {
+          // create accessor for the Java Class field
+          Accessor accessor = accessorFactory.createAccessor(field);
 
-        ParameterHandle parameterHandle =
-            rtiamb.getParameterHandle(ic.getClassHandle(), parameterName);
+          // create codec for the Java Class field
+          OOencoder codec =
+              encoderFactory.createOOencoder(
+                  field.getGenericType(), omtParameter.getDataType().getValue());
 
-        Parameter parameter = new Parameter(ic, parameterName, parameterHandle, accessor, codec);
+          parameter = pam.create(parameterName, parameterHandle, accessor, codec);
+        }
 
-        ic.addParameter(parameter);
+        parameterSet.add(parameter);
       } catch (OOcodecException | ReflectiveOperationException ex) {
         throw new RTIinternalError(ex.getMessage(), ex);
       } catch (InvalidInteractionClassHandle ex) {
@@ -150,6 +158,8 @@ public class InteractionClassManager {
         throw new InteractionParameterNotDefined(ex.getMessage(), ex);
       }
     }
+
+    return parameterSet;
   }
 
   public InteractionClass getClassByClazz(Class clazz) {

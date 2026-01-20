@@ -234,6 +234,10 @@ The following support methods are added.
 public String getObjectName(Object theObject)
 
 public Object getObject(String theObjectName)
+
+public OOattribute getAttribute(Class clazz, String attributeName)
+
+public OOparameter getParameter(Class clazz, String parameterName)
 ```
 
 These methods provide a translation between a Java object (as an HLA object instance) and its name.
@@ -356,7 +360,11 @@ public void receiveInteraction(
 
 ## OOattribute and OOparameter
 
-An HLA attribute is identified by an object the implements the `OOattribute` interface. Via the interface the name of the attribute and the previously provided cookie (if any) can be requested. The cookie is a caller provided object at object class publication/subscription. A cookie can be as simple as an integer value, or a more complex object with several methods. The `OOattribute` interface is:
+An HLA attribute is identified by an object the implements the `OOattribute` interface. Via the interface the name of the attribute and a previously provided cookie (if any) can be obtained.
+
+The cookie is a caller provided object that can be associated with the attribute at object class publication/subscription, or by setting the value directly via the interface. A cookie can be as simple as an integer value, or a more complex object with several methods.
+
+The `OOattribute` interface is:
 
 ```
 public interface OOattribute {
@@ -364,6 +372,8 @@ public interface OOattribute {
     public String getName();
 
     public Object getCookie();
+	
+	public void setCookie(Object cookie);
 }
 ```
 
@@ -375,5 +385,7 @@ public interface OOparameter {
     public String getName();
 
     public Object getCookie();
+
+	public void setCookie(Object cookie);
 }
 ```

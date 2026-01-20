@@ -59,7 +59,7 @@ public class TestSerializerInteraction extends NullFederateAmbassador {
             properties.getEncodingType(), accessorFactory, modules);
   }
 
-  private void testSerialisation(OOobjectFactory objectFactory) throws RTIexception {
+  private void testSerialisation(OOobjectFactory objectFactory) throws RTIexception {   
     InteractionClassManager icm1 =
         new InteractionClassManager(rtiamb, accessorFactory, encoderFactory, modules);
     InteractionClassManager icm2 =

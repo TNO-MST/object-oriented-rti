@@ -14,6 +14,7 @@ import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.RTIinternalError;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +36,8 @@ import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
  */
 public class ObjectClassManager {
 
-  // static properties
+  // immutable properties
+  private final AttributeManager atm;
   private final RTIambassador rtiamb;
   private final AccessorFactory accessorFactory;
   private final OOencoderFactory encoderFactory;
@@ -43,7 +45,7 @@ public class ObjectClassManager {
   private final AttributeHandleValueMapFactory ahvmFactory;
   private final AttributeHandleSetFactory ahsFactory;
 
-  // dynamic properties
+  // mutable properties
   private final Map<Class, ObjectClass> clazz2class = new ConcurrentHashMap<>();
   private final Map<ObjectClassHandle, ObjectClass> handle2class = new ConcurrentHashMap<>();
 
@@ -54,6 +56,7 @@ public class ObjectClassManager {
       ObjectModelType[] modules)
       throws FederateNotExecutionMember, NotConnected {
 
+    this.atm = new AttributeManager();
     this.rtiamb = rtiamb;
     this.accessorFactory = accessorFactory;
     this.encoderFactory = encoderFactory;
@@ -73,11 +76,11 @@ public class ObjectClassManager {
     if (oc != null) return oc;
 
     try {
-      String fqClassName = Helpers.getFullyQualifiedObjectClassName(clazz);
-      ObjectClassHandle classHandle = rtiamb.getObjectClassHandle(fqClassName);
-      oc = new ObjectClass(clazz, fqClassName, classHandle, this.ahvmFactory, this.ahsFactory);
-
-      this.createAttributeSet(oc);
+      String classsName = Helpers.getFullyQualifiedObjectClassName(clazz);
+      ObjectClassHandle classHandle = rtiamb.getObjectClassHandle(classsName);
+      Set<Attribute> attributeSet = this.createAttributeSet(clazz, classsName, classHandle);
+            
+      oc = new ObjectClass(clazz, classsName, classHandle, attributeSet, this.ahvmFactory, this.ahsFactory);
 
       clazz2class.put(oc.getClazz(), oc);
       handle2class.put(oc.getClassHandle(), oc);
@@ -99,7 +102,8 @@ public class ObjectClassManager {
     return null;
   }
 
-  private void createAttributeSet(ObjectClass oc)
+  private Set<Attribute> createAttributeSet(
+      Class clazz, String className, ObjectClassHandle classHandle)
       throws ObjectClassNotDefined,
           RTIinternalError,
           FederateNotExecutionMember,
@@ -108,14 +112,16 @@ public class ObjectClassManager {
 
     // get the attributes as defined in the FOM
     Set<nl.tno.omt.Attribute> omtAttributeSet =
-        OmtFunctions.getObjectClassAttributes(modules, oc.getName());
+        OmtFunctions.getObjectClassAttributes(modules, className);
     if (omtAttributeSet == null) {
       // something went wrong
-      throw new ObjectClassNotDefined("Cannot get attributes of Class " + oc.getName());
+      throw new ObjectClassNotDefined("Cannot get attributes of Class " + className);
     }
 
     // create an attribute for each Java class field
-    Collection<Field> fields = ClassUtils.getFields(oc.getClazz());
+    Collection<Field> fields = ClassUtils.getFields(clazz);
+
+    Set<Attribute> attributeSet = new HashSet<>();
 
     for (Field field : fields) {
       try {
@@ -130,20 +136,22 @@ public class ObjectClassManager {
               "Java Class attribute " + fieldName + " not defined in FOM");
         }
 
-        // create accessor for the Java Class field
-        Accessor accessor = accessorFactory.createAccessor(field);
+        AttributeHandle attributeHandle = rtiamb.getAttributeHandle(classHandle, attributeName);
 
-        // create codec for the Java Class field
-        OOencoder codec =
-            encoderFactory.createOOencoder(
-                field.getGenericType(), omtAttribute.getDataType().getValue());
+        Attribute attribute = atm.getAttributeByHandle(attributeHandle);
+        if (attribute == null) {
+          // create accessor for the Java Class field
+          Accessor accessor = accessorFactory.createAccessor(field);
 
-        AttributeHandle attributeHandle =
-            rtiamb.getAttributeHandle(oc.getClassHandle(), attributeName);
+          // create codec for the Java Class field
+          OOencoder codec =
+              encoderFactory.createOOencoder(
+                  field.getGenericType(), omtAttribute.getDataType().getValue());
 
-        Attribute attribute = new Attribute(oc, attributeName, attributeHandle, accessor, codec);
+          attribute = atm.create(attributeName, attributeHandle, accessor, codec);
+        }
 
-        oc.addAttribute(attribute);
+        attributeSet.add(attribute);
       } catch (OOcodecException | ReflectiveOperationException ex) {
         throw new RTIinternalError(ex.getMessage(), ex);
       } catch (InvalidObjectClassHandle ex) {
@@ -152,6 +160,8 @@ public class ObjectClassManager {
         throw new AttributeNotDefined(ex.getMessage(), ex);
       }
     }
+
+    return attributeSet;
   }
 
   public ObjectClass getClassByClazz(Class clazz) {
