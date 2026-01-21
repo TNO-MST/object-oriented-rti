@@ -1,16 +1,21 @@
 package nl.tno.oorti.impl;
 
-import hla.rti1516e.AttributeHandleValueMap;
+import hla.rti1516e.AttributeHandleSet;
 import hla.rti1516e.CallbackModel;
 import hla.rti1516e.FederateHandle;
 import hla.rti1516e.LogicalTime;
 import hla.rti1516e.MessageRetractionReturn;
 import hla.rti1516e.ObjectInstanceHandle;
-import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.RTIambassador;
 import hla.rti1516e.exceptions.AlreadyConnected;
+import hla.rti1516e.exceptions.AttributeAcquisitionWasNotRequested;
+import hla.rti1516e.exceptions.AttributeAlreadyBeingAcquired;
+import hla.rti1516e.exceptions.AttributeAlreadyBeingDivested;
+import hla.rti1516e.exceptions.AttributeAlreadyOwned;
+import hla.rti1516e.exceptions.AttributeDivestitureWasNotRequested;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.AttributeNotOwned;
+import hla.rti1516e.exceptions.AttributeNotPublished;
 import hla.rti1516e.exceptions.CallNotAllowedFromWithinCallback;
 import hla.rti1516e.exceptions.ConnectionFailed;
 import hla.rti1516e.exceptions.CouldNotCreateLogicalTimeFactory;
@@ -29,6 +34,7 @@ import hla.rti1516e.exceptions.InteractionClassNotPublished;
 import hla.rti1516e.exceptions.InteractionParameterNotDefined;
 import hla.rti1516e.exceptions.InvalidLocalSettingsDesignator;
 import hla.rti1516e.exceptions.InvalidLogicalTime;
+import hla.rti1516e.exceptions.NoAcquisitionPending;
 import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.ObjectClassNotPublished;
@@ -42,6 +48,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,7 +86,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   ObjectClassManager ocm;
   InteractionClassManager icm;
   ObjectInstanceManager oim;
-  
+
   // manager for the MIM
   ObjectClassManager ocmMim;
 
@@ -696,8 +703,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObjectName);
-    AttributeHandleValueMap map = oi.serialize(theObject);
-    rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
+    rtiamb.updateAttributeValues(oi.getInstanceHandle(), oi.serialize(theObject), userSuppliedTag);
   }
 
   @Override
@@ -714,8 +720,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
-    AttributeHandleValueMap map = oi.serialize();
-    rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
+    rtiamb.updateAttributeValues(oi.getInstanceHandle(), oi.serialize(), userSuppliedTag);
   }
 
   @Override
@@ -733,8 +738,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
-    AttributeHandleValueMap map = oi.serialize(theAttributes);
-    rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag);
+    rtiamb.updateAttributeValues(
+        oi.getInstanceHandle(), oi.serialize(theAttributes), userSuppliedTag);
   }
 
   @Override
@@ -753,8 +758,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
-    AttributeHandleValueMap map = oi.serialize();
-    return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
+    return rtiamb.updateAttributeValues(
+        oi.getInstanceHandle(), oi.serialize(), userSuppliedTag, theTime);
   }
 
   @Override
@@ -773,8 +778,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObjectName);
-    AttributeHandleValueMap map = oi.serialize(theObject);
-    return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
+    return rtiamb.updateAttributeValues(
+        oi.getInstanceHandle(), oi.serialize(theObject), userSuppliedTag, theTime);
   }
 
   @Override
@@ -793,8 +798,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     if (this.oim == null) throw new FederateNotExecutionMember("Not initialized yet.");
 
     ObjectInstance oi = oim.getObjectInstanceIfExists(theObject);
-    AttributeHandleValueMap map = oi.serialize(theAttributes);
-    return rtiamb.updateAttributeValues(oi.getInstanceHandle(), map, userSuppliedTag, theTime);
+    return rtiamb.updateAttributeValues(
+        oi.getInstanceHandle(), oi.serialize(theAttributes), userSuppliedTag, theTime);
   }
 
   @Override
@@ -962,9 +967,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
-
-    ParameterHandleValueMap map = ic.serialize(theInteraction);
-    rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag);
+    rtiamb.sendInteraction(ic.getClassHandle(), ic.serialize(theInteraction), userSuppliedTag);
   }
 
   @Override
@@ -983,9 +986,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
-
-    ParameterHandleValueMap map = ic.serialize(theInteraction, theParameters);
-    rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag);
+    rtiamb.sendInteraction(
+        ic.getClassHandle(), ic.serialize(theInteraction, theParameters), userSuppliedTag);
   }
 
   @Override
@@ -1005,9 +1007,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
-
-    ParameterHandleValueMap map = ic.serialize(theInteraction);
-    return rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag, theTime);
+    return rtiamb.sendInteraction(
+        ic.getClassHandle(), ic.serialize(theInteraction), userSuppliedTag, theTime);
   }
 
   @Override
@@ -1030,14 +1031,220 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     InteractionClass ic =
         icm.getInteractionClassIfExists(this.objectFactory.getInteractionClass(theInteraction));
+    return rtiamb.sendInteraction(
+        ic.getClassHandle(), ic.serialize(theInteraction, theParameters), userSuppliedTag, theTime);
+  }
 
-    ParameterHandleValueMap map = ic.serialize(theInteraction, theParameters);
-    return rtiamb.sendInteraction(ic.getClassHandle(), map, userSuppliedTag, theTime);
+  ///////////////////////////////////
+  // Ownership Management Services //
+  ///////////////////////////////////
+
+  @Override
+  public void unconditionalAttributeOwnershipDivestiture(
+      Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    this.rtiamb.unconditionalAttributeOwnershipDivestiture(oi.getInstanceHandle(), ahs);
+  }
+
+  @Override
+  public void negotiatedAttributeOwnershipDivestiture(
+      Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
+      throws AttributeAlreadyBeingDivested,
+          AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    this.rtiamb.negotiatedAttributeOwnershipDivestiture(
+        oi.getInstanceHandle(), ahs, userSuppliedTag);
+  }
+
+  @Override
+  public void confirmDivestiture(
+      Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
+      throws NoAcquisitionPending,
+          AttributeDivestitureWasNotRequested,
+          AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    this.rtiamb.confirmDivestiture(oi.getInstanceHandle(), ahs, userSuppliedTag);
+  }
+
+  @Override
+  public void attributeOwnershipAcquisition(
+      Object theObject, Set<OOattribute> desiredAttributes, byte[] userSuppliedTag)
+      throws AttributeNotPublished,
+          ObjectClassNotPublished,
+          FederateOwnsAttributes,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(desiredAttributes);
+    this.rtiamb.attributeOwnershipAcquisition(oi.getInstanceHandle(), ahs, userSuppliedTag);
+  }
+
+  @Override
+  public void attributeOwnershipAcquisitionIfAvailable(
+      Object theObject, Set<OOattribute> desiredAttributes)
+      throws AttributeAlreadyBeingAcquired,
+          AttributeNotPublished,
+          ObjectClassNotPublished,
+          FederateOwnsAttributes,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(desiredAttributes);
+    this.rtiamb.attributeOwnershipAcquisitionIfAvailable(oi.getInstanceHandle(), ahs);
+  }
+
+  @Override
+  public void attributeOwnershipReleaseDenied(Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    this.rtiamb.attributeOwnershipReleaseDenied(oi.getInstanceHandle(), ahs);
+  }
+
+  @Override
+  public Set<OOattribute> attributeOwnershipDivestitureIfWanted(
+      Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs2 =
+        this.rtiamb.attributeOwnershipDivestitureIfWanted(oi.getInstanceHandle(), ahs);
+    return oi.getObjectClass().createAttributeSet(ahs2);
+  }
+
+  @Override
+  public void cancelNegotiatedAttributeOwnershipDivestiture(
+      Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeDivestitureWasNotRequested,
+          AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    this.rtiamb.cancelNegotiatedAttributeOwnershipDivestiture(oi.getInstanceHandle(), ahs);
+  }
+
+  @Override
+  public void cancelAttributeOwnershipAcquisition(Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeAcquisitionWasNotRequested,
+          AttributeAlreadyOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    AttributeHandleSet ahs =
+        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    this.rtiamb.cancelAttributeOwnershipAcquisition(oi.getInstanceHandle(), ahs);
+  }
+
+  @Override
+  public void queryAttributeOwnership(Object theObject, OOattribute theAttribute)
+      throws AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    this.rtiamb.queryAttributeOwnership(
+        oi.getInstanceHandle(), Attribute.class.cast(theAttribute).getAttributeHandle());
+  }
+
+  @Override
+  public boolean isAttributeOwnedByFederate(Object theObject, OOattribute theAttribute)
+      throws AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ObjectInstance oi = this.oim.getObjectInstanceIfExists(theObject);
+    return this.rtiamb.isAttributeOwnedByFederate(
+        oi.getInstanceHandle(), Attribute.class.cast(theAttribute).getAttributeHandle());
   }
 
   //////////////////////////
   // RTI Support Services //
   //////////////////////////
+
   @Override
   public String getObjectName(Object theObject)
       throws ObjectInstanceNotKnown, FederateNotExecutionMember {
@@ -1067,6 +1274,21 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   }
 
   @Override
+  public Set<OOattribute> getAttributes(Class clazz, String... attributeName)
+      throws ObjectClassNotDefined,
+          AttributeNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    Set<OOattribute> attributes = new HashSet<>();
+    for (String name : attributeName) {
+      attributes.add(getAttribute(clazz, name));
+    }
+    return attributes;
+  }
+
+  @Override
   public OOparameter getParameter(Class clazz, String parameterName)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
@@ -1078,5 +1300,20 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
       return this.icm
           .create(clazz)
           .getParameterByNameIfExists(OmtJavaMapping.toOmtName(parameterName));
+  }
+
+  @Override
+  public Set<OOparameter> getParameters(Class clazz, String... parameterName)
+      throws InteractionClassNotDefined,
+          InteractionParameterNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    Set<OOparameter> parameters = new HashSet<>();
+    for (String name : parameterName) {
+      parameters.add(getParameter(clazz, name));
+    }
+    return parameters;
   }
 }

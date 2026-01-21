@@ -6,8 +6,14 @@ import hla.rti1516e.LogicalTime;
 import hla.rti1516e.MessageRetractionReturn;
 import hla.rti1516e.RTIambassador;
 import hla.rti1516e.exceptions.AlreadyConnected;
+import hla.rti1516e.exceptions.AttributeAcquisitionWasNotRequested;
+import hla.rti1516e.exceptions.AttributeAlreadyBeingAcquired;
+import hla.rti1516e.exceptions.AttributeAlreadyBeingDivested;
+import hla.rti1516e.exceptions.AttributeAlreadyOwned;
+import hla.rti1516e.exceptions.AttributeDivestitureWasNotRequested;
 import hla.rti1516e.exceptions.AttributeNotDefined;
 import hla.rti1516e.exceptions.AttributeNotOwned;
+import hla.rti1516e.exceptions.AttributeNotPublished;
 import hla.rti1516e.exceptions.CallNotAllowedFromWithinCallback;
 import hla.rti1516e.exceptions.ConnectionFailed;
 import hla.rti1516e.exceptions.CouldNotCreateLogicalTimeFactory;
@@ -17,6 +23,7 @@ import hla.rti1516e.exceptions.ErrorReadingFDD;
 import hla.rti1516e.exceptions.FederateAlreadyExecutionMember;
 import hla.rti1516e.exceptions.FederateNameAlreadyInUse;
 import hla.rti1516e.exceptions.FederateNotExecutionMember;
+import hla.rti1516e.exceptions.FederateOwnsAttributes;
 import hla.rti1516e.exceptions.FederateServiceInvocationsAreBeingReportedViaMOM;
 import hla.rti1516e.exceptions.FederationExecutionDoesNotExist;
 import hla.rti1516e.exceptions.InconsistentFDD;
@@ -25,6 +32,7 @@ import hla.rti1516e.exceptions.InteractionClassNotPublished;
 import hla.rti1516e.exceptions.InteractionParameterNotDefined;
 import hla.rti1516e.exceptions.InvalidLocalSettingsDesignator;
 import hla.rti1516e.exceptions.InvalidLogicalTime;
+import hla.rti1516e.exceptions.NoAcquisitionPending;
 import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.ObjectClassNotPublished;
@@ -49,7 +57,7 @@ public interface OORTIambassador extends RTIambassador {
   ////////////////////////////////////
   // Federation Management Services //
   ////////////////////////////////////
-  public void connect(
+  void connect(
       OOFederateAmbassador federateReference,
       CallbackModel callbackModel,
       String localSettingsDesignator)
@@ -60,7 +68,7 @@ public interface OORTIambassador extends RTIambassador {
           CallNotAllowedFromWithinCallback,
           RTIinternalError;
 
-  public void connect(OOFederateAmbassador federateReference, CallbackModel callbackModel)
+  void connect(OOFederateAmbassador federateReference, CallbackModel callbackModel)
       throws ConnectionFailed,
           InvalidLocalSettingsDesignator,
           UnsupportedCallbackModel,
@@ -68,7 +76,7 @@ public interface OORTIambassador extends RTIambassador {
           CallNotAllowedFromWithinCallback,
           RTIinternalError;
 
-  public FederateHandle joinFederationExecution(
+  FederateHandle joinFederationExecution(
       String federateName,
       String federateType,
       String federationExecutionName,
@@ -90,8 +98,8 @@ public interface OORTIambassador extends RTIambassador {
   /////////////////////////////////////
   // Declaration Management Services //
   /////////////////////////////////////
-  // Object classes
-  public Set<OOattribute> publishObjectClass(Class clazz)
+
+  Set<OOattribute> publishObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -100,7 +108,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOattribute> publishObjectClass(Class clazz, Set<? extends Object> cookies)
+  Set<OOattribute> publishObjectClass(Class clazz, Set<? extends Object> cookies)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -109,7 +117,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOattribute> subscribeObjectClass(Class clazz)
+  Set<OOattribute> subscribeObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -118,7 +126,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOattribute> subscribeObjectClass(Class clazz, Set<? extends Object> cookies)
+  Set<OOattribute> subscribeObjectClass(Class clazz, Set<? extends Object> cookies)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -127,7 +135,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void unpublishObjectClass(Class clazz)
+  void unpublishObjectClass(Class clazz)
       throws OwnershipAcquisitionPending,
           AttributeNotDefined,
           ObjectClassNotDefined,
@@ -137,7 +145,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void unsubscribeObjectClass(Class clazz)
+  void unsubscribeObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -146,8 +154,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  // Interaction classes
-  public Set<OOparameter> publishInteractionClass(Class clazz)
+  Set<OOparameter> publishInteractionClass(Class clazz)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           SaveInProgress,
@@ -156,7 +163,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> cookies)
+  Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> cookies)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           SaveInProgress,
@@ -165,7 +172,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOparameter> subscribeInteractionClass(Class clazz)
+  Set<OOparameter> subscribeInteractionClass(Class clazz)
       throws FederateServiceInvocationsAreBeingReportedViaMOM,
           InteractionClassNotDefined,
           InteractionParameterNotDefined,
@@ -175,7 +182,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<? extends Object> cookies)
+  Set<OOparameter> subscribeInteractionClass(Class clazz, Set<? extends Object> cookies)
       throws FederateServiceInvocationsAreBeingReportedViaMOM,
           InteractionClassNotDefined,
           InteractionParameterNotDefined,
@@ -185,7 +192,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void unpublishInteractionClass(Class clazz)
+  void unpublishInteractionClass(Class clazz)
       throws InteractionClassNotDefined,
           SaveInProgress,
           RestoreInProgress,
@@ -193,7 +200,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void unsubscribeInteractionClass(Class clazz)
+  void unsubscribeInteractionClass(Class clazz)
       throws InteractionClassNotDefined,
           SaveInProgress,
           RestoreInProgress,
@@ -204,8 +211,8 @@ public interface OORTIambassador extends RTIambassador {
   ////////////////////////////////
   // Object Management Services //
   ////////////////////////////////
-  // Objects
-  public void registerObjectInstance(Object theObject)
+
+  void registerObjectInstance(Object theObject)
       throws ObjectClassNotPublished,
           ObjectClassNotDefined,
           ObjectInstanceNotKnown,
@@ -215,7 +222,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void updateAttributeValues(Object theObject, byte[] userSuppliedTag)
+  void updateAttributeValues(Object theObject, byte[] userSuppliedTag)
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
@@ -225,7 +232,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void updateAttributeValues(String theObjectName, Object theObject, byte[] userSuppliedTag)
+  void updateAttributeValues(String theObjectName, Object theObject, byte[] userSuppliedTag)
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
@@ -235,7 +242,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void updateAttributeValues(
+  void updateAttributeValues(
       Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
       throws AttributeNotOwned,
           AttributeNotDefined,
@@ -246,7 +253,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn updateAttributeValues(
+  MessageRetractionReturn updateAttributeValues(
       Object theObject, byte[] userSuppliedTag, LogicalTime theTime)
       throws InvalidLogicalTime,
           AttributeNotOwned,
@@ -258,7 +265,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn updateAttributeValues(
+  MessageRetractionReturn updateAttributeValues(
       String theObjectName, Object theObject, byte[] userSuppliedTag, LogicalTime theTime)
       throws InvalidLogicalTime,
           AttributeNotOwned,
@@ -270,7 +277,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn updateAttributeValues(
+  MessageRetractionReturn updateAttributeValues(
       Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag, LogicalTime theTime)
       throws InvalidLogicalTime,
           AttributeNotOwned,
@@ -282,7 +289,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void deleteObjectInstance(Object theObject, byte[] userSuppliedTag)
+  void deleteObjectInstance(Object theObject, byte[] userSuppliedTag)
       throws DeletePrivilegeNotHeld,
           ObjectInstanceNotKnown,
           SaveInProgress,
@@ -291,7 +298,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void deleteObjectInstance(String theObjectName, byte[] userSuppliedTag)
+  void deleteObjectInstance(String theObjectName, byte[] userSuppliedTag)
       throws DeletePrivilegeNotHeld,
           ObjectInstanceNotKnown,
           SaveInProgress,
@@ -300,7 +307,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn deleteObjectInstance(
+  MessageRetractionReturn deleteObjectInstance(
       Object theObject, byte[] userSuppliedTag, LogicalTime theTime)
       throws InvalidLogicalTime,
           DeletePrivilegeNotHeld,
@@ -311,7 +318,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn deleteObjectInstance(
+  MessageRetractionReturn deleteObjectInstance(
       String theObjectName, byte[] userSuppliedTag, LogicalTime theTime)
       throws InvalidLogicalTime,
           DeletePrivilegeNotHeld,
@@ -322,7 +329,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void requestAttributeValueUpdate(Class clazz, byte[] userSuppliedTag)
+  void requestAttributeValueUpdate(Class clazz, byte[] userSuppliedTag)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -331,7 +338,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void requestAttributeValueUpdate(
+  void requestAttributeValueUpdate(
       Class clazz, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
@@ -341,7 +348,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void requestAttributeValueUpdate(Object theObject, byte[] userSuppliedTag)
+  void requestAttributeValueUpdate(Object theObject, byte[] userSuppliedTag)
       throws AttributeNotDefined,
           ObjectInstanceNotKnown,
           SaveInProgress,
@@ -350,7 +357,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void requestAttributeValueUpdate(
+  void requestAttributeValueUpdate(
       Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
       throws AttributeNotDefined,
           ObjectInstanceNotKnown,
@@ -360,8 +367,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  // Interactions
-  public void sendInteraction(Object theInteraction, byte[] userSuppliedTag)
+  void sendInteraction(Object theInteraction, byte[] userSuppliedTag)
       throws InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
@@ -371,7 +377,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public void sendInteraction(
+  void sendInteraction(
       Object theInteraction, Set<OOparameter> theParameters, byte[] userSuppliedTag)
       throws InteractionClassNotPublished,
           InteractionParameterNotDefined,
@@ -382,7 +388,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn sendInteraction(
+  MessageRetractionReturn sendInteraction(
       Object theInteraction, byte[] userSuppliedTag, LogicalTime theTime)
       throws InvalidLogicalTime,
           InteractionClassNotPublished,
@@ -394,7 +400,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  public MessageRetractionReturn sendInteraction(
+  MessageRetractionReturn sendInteraction(
       Object theInteraction,
       Set<OOparameter> theParameters,
       byte[] userSuppliedTag,
@@ -409,23 +415,165 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
+  ///////////////////////////////////
+  // Ownership Management Services //
+  ///////////////////////////////////
+
+  void unconditionalAttributeOwnershipDivestiture(Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void negotiatedAttributeOwnershipDivestiture(
+      Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
+      throws AttributeAlreadyBeingDivested,
+          AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void confirmDivestiture(Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
+      throws NoAcquisitionPending,
+          AttributeDivestitureWasNotRequested,
+          AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void attributeOwnershipAcquisition(
+      Object theObject, Set<OOattribute> desiredAttributes, byte[] userSuppliedTag)
+      throws AttributeNotPublished,
+          ObjectClassNotPublished,
+          FederateOwnsAttributes,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void attributeOwnershipAcquisitionIfAvailable(
+      Object theObject, Set<OOattribute> desiredAttributes)
+      throws AttributeAlreadyBeingAcquired,
+          AttributeNotPublished,
+          ObjectClassNotPublished,
+          FederateOwnsAttributes,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void attributeOwnershipReleaseDenied(Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  Set<OOattribute> attributeOwnershipDivestitureIfWanted(
+      Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void cancelNegotiatedAttributeOwnershipDivestiture(
+      Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeDivestitureWasNotRequested,
+          AttributeNotOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void cancelAttributeOwnershipAcquisition(Object theObject, Set<OOattribute> theAttributes)
+      throws AttributeAcquisitionWasNotRequested,
+          AttributeAlreadyOwned,
+          AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  void queryAttributeOwnership(Object theObject, OOattribute theAttribute)
+      throws AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  boolean isAttributeOwnedByFederate(Object theObject, OOattribute theAttribute)
+      throws AttributeNotDefined,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
   //////////////////////////
   // RTI Support Services //
   //////////////////////////
-  public String getObjectName(Object theObject)
+
+  String getObjectName(Object theObject)
       throws ObjectInstanceNotKnown, FederateNotExecutionMember, NotConnected, RTIinternalError;
 
-  public Object getObject(String theObjectName)
+  Object getObject(String theObjectName)
       throws ObjectInstanceNotKnown, FederateNotExecutionMember, NotConnected, RTIinternalError;
 
-  public OOattribute getAttribute(Class clazz, String attributeName)
+  OOattribute getAttribute(Class clazz, String attributeName)
       throws ObjectClassNotDefined,
           AttributeNotDefined,
           FederateNotExecutionMember,
           NotConnected,
           RTIinternalError;
 
-  public OOparameter getParameter(Class clazz, String parameterName)
+  Set<OOattribute> getAttributes(Class clazz, String ... attributeName)
+      throws ObjectClassNotDefined,
+          AttributeNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  OOparameter getParameter(Class clazz, String parameterName)
+      throws InteractionClassNotDefined,
+          InteractionParameterNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  Set<OOparameter> getParameters(Class clazz, String ... parameterName)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           FederateNotExecutionMember,

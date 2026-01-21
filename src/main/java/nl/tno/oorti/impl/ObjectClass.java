@@ -85,7 +85,7 @@ public class ObjectClass {
   public Attribute getAttributeByHandle(AttributeHandle handle) {
     return this.handle2attribute.get(handle);
   }
-  
+
   public Attribute getAttributeByHandleIfExists(AttributeHandle handle) throws AttributeNotDefined {
     Attribute attribute = handle2attribute.get(handle);
     if (attribute != null) return attribute;
@@ -107,14 +107,13 @@ public class ObjectClass {
   }
 
   public void addPublications(Set<? extends Object> cookies) throws AttributeNotDefined {
+    // first check the inputs
     for (Object cookie : cookies) {
-      String attributeName = cookie.toString();
-      Attribute attribute = this.name2attribute.get(attributeName);
-      if (attribute != null) {
-        attribute.setCookie(cookie);
-        pubAttributeSet.add(attribute);
-      } else
-        throw new AttributeNotDefined("Unknown attribute " + attributeName + " for class " + name);
+      this.getAttributeByNameIfExists(cookie.toString());
+    }
+
+    for (Object cookie : cookies) {
+      pubAttributeSet.add(this.getAttributeByNameIfExists(cookie.toString()));
     }
   }
 
@@ -125,14 +124,13 @@ public class ObjectClass {
   }
 
   public void addSubscriptions(Set<? extends Object> cookies) throws AttributeNotDefined {
+    // first check the inputs
     for (Object cookie : cookies) {
-      String attributeName = cookie.toString();
-      Attribute attribute = this.name2attribute.get(attributeName);
-      if (attribute != null) {
-        attribute.setCookie(cookie);
-        subAttributeSet.add(attribute);
-      } else
-        throw new AttributeNotDefined("Unknown attribute " + attributeName + " for class " + name);
+      this.getAttributeByNameIfExists(cookie.toString());
+    }
+
+    for (Object cookie : cookies) {
+      subAttributeSet.add(this.getAttributeByNameIfExists(cookie.toString()));
     }
   }
 
@@ -141,12 +139,13 @@ public class ObjectClass {
   }
 
   public void removePublications(Set<String> theAttributeNames) throws AttributeNotDefined {
+    // first check the inputs
     for (String attributeName : theAttributeNames) {
-      Attribute attribute = this.name2attribute.get(attributeName);
-      if (attribute != null) {
-        pubAttributeSet.remove(attribute);
-      } else
-        throw new AttributeNotDefined("Unknown attribute " + attributeName + " for class " + name);
+      this.getAttributeByNameIfExists(attributeName);
+    }
+
+    for (String attributeName : theAttributeNames) {
+      pubAttributeSet.remove(this.getAttributeByNameIfExists(attributeName));
     }
   }
 
@@ -155,12 +154,13 @@ public class ObjectClass {
   }
 
   public void removeSubscriptions(Set<String> theAttributeNames) throws AttributeNotDefined {
+    // first check the inputs
     for (String attributeName : theAttributeNames) {
-      Attribute attribute = this.name2attribute.get(attributeName);
-      if (attribute != null) {
-        subAttributeSet.remove(attribute);
-      } else
-        throw new AttributeNotDefined("Unknown attribute " + attributeName + " for class " + name);
+      this.getAttributeByNameIfExists(attributeName);
+    }
+
+    for (String attributeName : theAttributeNames) {
+      subAttributeSet.remove(this.getAttributeByNameIfExists(attributeName));
     }
   }
 
@@ -176,12 +176,7 @@ public class ObjectClass {
       throws AttributeNotDefined {
     AttributeHandleSet ahs = this.ahsFactory.create();
     for (Object cookie : cookies) {
-      String attributeName = cookie.toString();
-      Attribute attribute = this.name2attribute.get(attributeName);
-      if (attribute != null) {
-        ahs.add(attribute.getAttributeHandle());
-      } else
-        throw new AttributeNotDefined("Unknown attribute " + attributeName + " for class " + name);
+      ahs.add(this.getAttributeByNameIfExists(cookie.toString()).getAttributeHandle());
     }
     return ahs;
   }
@@ -198,12 +193,7 @@ public class ObjectClass {
       throws AttributeNotDefined {
     Set<OOattribute> attributeSet = new HashSet<>();
     for (AttributeHandle attributeHandle : handleSet) {
-      OOattribute attribute = this.handle2attribute.get(attributeHandle);
-      if (attribute != null) {
-        attributeSet.add(attribute);
-      } else
-        throw new AttributeNotDefined(
-            "Unknown attribute " + attributeHandle.toString() + " for class " + name);
+      attributeSet.add(this.getAttributeByHandleIfExists(attributeHandle));
     }
     return attributeSet;
   }
