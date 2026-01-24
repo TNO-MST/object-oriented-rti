@@ -136,6 +136,46 @@ public class NullOOFederateAmbassador extends NullFederateAmbassador
       SupplementalReceiveInfo receiveInfo)
       throws FederateInternalError {}
 
+  @Override
+  public void attributesInScope(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributesOutOfScope(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void turnUpdatesOnForObjectInstance(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void turnUpdatesOnForObjectInstance(
+      Object theObject, Set<OOattribute> theAttributes, String updateRateDesignator)
+      throws FederateInternalError {}
+
+  @Override
+  public void turnUpdatesOffForObjectInstance(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void confirmAttributeTransportationTypeChange(
+      Object theObject, Set<OOattribute> theAttributes, TransportationTypeHandle theTransportation)
+      throws FederateInternalError {}
+
+  @Override
+  public void reportAttributeTransportationType(
+      Object theObject, OOattribute theAttribute, TransportationTypeHandle theTransportation)
+      throws FederateInternalError {}
+
+  @Override
+  public void confirmInteractionTransportationTypeChange(
+      Class clazz, TransportationTypeHandle theTransportation) throws FederateInternalError {}
+
+  @Override
+  public void reportInteractionTransportationType(
+      FederateHandle theFederate, Class clazz, TransportationTypeHandle theTransportation)
+      throws FederateInternalError {}
+
   ///////////////////////////////////
   // Ownership Management Services //
   ///////////////////////////////////

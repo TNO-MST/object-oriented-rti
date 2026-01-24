@@ -122,6 +122,37 @@ public interface OOFederateAmbassador extends FederateAmbassador {
       Object theObject, Set<OOattribute> theAttributes, byte[] userSuppliedTag)
       throws FederateInternalError;
 
+  void attributesInScope(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError;
+
+  void attributesOutOfScope(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError;
+
+  void turnUpdatesOnForObjectInstance(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError;
+
+  void turnUpdatesOnForObjectInstance(
+      Object theObject, Set<OOattribute> theAttributes, String updateRateDesignator)
+      throws FederateInternalError;
+
+  void turnUpdatesOffForObjectInstance(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError;
+
+  void confirmAttributeTransportationTypeChange(
+      Object theObject, Set<OOattribute> theAttributes, TransportationTypeHandle theTransportation)
+      throws FederateInternalError;
+
+  void reportAttributeTransportationType(
+      Object theObject, OOattribute theAttribute, TransportationTypeHandle theTransportation)
+      throws FederateInternalError;
+
+  void confirmInteractionTransportationTypeChange(
+      Class clazz, TransportationTypeHandle theTransportation) throws FederateInternalError;
+
+  void reportInteractionTransportationType(
+      FederateHandle theFederate, Class clazz, TransportationTypeHandle theTransportation)
+      throws FederateInternalError;
+
   ///////////////////////////////////
   // Ownership Management Services //
   ///////////////////////////////////
