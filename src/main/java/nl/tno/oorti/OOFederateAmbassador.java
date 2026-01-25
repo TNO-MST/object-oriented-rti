@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * The OOFederateAmbassador defines the interface that a federate must implement for receiving
  * callbacks from the RTI. This interface extends to FederateAmbassador interface with additional
- * methods to handle Java Bean classes.
+ * methods to handle Java Beans.
  *
  * @author bergtwvd
  */

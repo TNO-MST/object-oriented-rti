@@ -13,7 +13,7 @@ public class DefaultOOobjectFactory implements OOobjectFactory {
   @Override
   public <C extends Object, T extends C> T createObject(Class<C> clazz) throws RTIinternalError {
     try {
-      return  (T) clazz.getConstructor().newInstance();
+      return (T) clazz.getConstructor().newInstance();
     } catch (NoSuchMethodException
         | SecurityException
         | InstantiationException
@@ -25,7 +25,8 @@ public class DefaultOOobjectFactory implements OOobjectFactory {
   }
 
   @Override
-  public <C extends Object, T extends C> T createInteraction(Class<C> clazz) throws RTIinternalError {
+  public <C extends Object, T extends C> T createInteraction(Class<C> clazz)
+      throws RTIinternalError {
     try {
       return (T) clazz.getConstructor().newInstance();
     } catch (NoSuchMethodException

@@ -10,8 +10,8 @@ import hla.rti1516e.exceptions.RTIinternalError;
  * HLA interaction) given its type (class), and to get the type of an object that was created
  * earlier by the factory.
  *
- * <p>An object factory may create an object o that is an instance of a sub class T of the requested
- * class C. The type that must be returned for the object o must be C.
+ * <p>An object factory may create an object `o` that is an instance of a subclass `T` of the
+ * requested class `C`. The type that must be returned for the object `o` must be `C`.
  *
  * @author bergtwvd
  */

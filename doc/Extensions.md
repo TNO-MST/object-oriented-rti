@@ -3,11 +3,13 @@ The interface extensions are summarised below. The extensions mimic the correspo
 
 ## OORTIambassador
 
-### Connect to RTI
+### Federation Management Services
+
+#### Connect to RTI
 
 Two additional methods to connect to the RTI are defined. Both take an `OOFederateAmbassador` as federate reference.
 
-### Join federation
+#### Join federation
 
 A number of `joinFederationExecutionWithCurrentFDD` methods are added to provide the current FDD (FOM Document Data). That is, a method to provide the set of FOM modules used in the federation, but not provided by the joining federate. Typically this is the set of FOM modules (including the MIM) provided in the create federation method.
 
@@ -15,64 +17,78 @@ The set of current FOM modules is combined with the additional FOM modules so th
 
 Note that the OORTI has a construction property to configure the OORTI to obtain the current FDD from the RTI. This only works if the (HLA Evolved) RTI provides an HLA Evolved format FDD. More recent RTIs may only provide an HLA 4 format FDD.
 
-### Publish or subscribe object class attributes
+### Declaration Management Services
+
+#### Publish or subscribe object class attributes
 
 Several methods are added to declare interest in HLA FOM Object Class attributes. The Java Class in these methods represents an HLA Object Class.
 
 If only a Java Class argument is provided then all Java Class properties are published or subscribed to, including inherited Java Class properties.
 
-### Publish or subscribe interactions class
+#### Publish or subscribe interactions class
 
 Several methods are added to declare interest in HLA FOM Interaction Classes. The Java Class in these methods represents an HLA Interaction Class.
 
-### Register object instance
+### Object Management Services
+
+#### Register object instance
 
 One method is added to register a Java object as an HLA Object Class instance. The associated Java Class must have been published as an HLA Object Class.
 
-### Update attribute values
+#### Update attribute values
 
 Several methods are added to update Java object property values in the federation execution. The associated Java Class must have been published as an HLA Object Class.
 Optionally a set of `OOattribute` objects can be provided to indicate which properties are to be updated as attribute value. If no set is provided then all published properties are to be updated.
 
 Also, two additional methods are added to update Java object property values in the federation execution, given another Java object (but of the same class) than originally registered. The HLA object intance to be updated is identified by the provided object name.
 
-### Delete object instance
+#### Delete object instance
 
 Several methods are added to delete a Java object from the federation. The associated Java Class must have been published as an HLA Object Class.
 
-### Request attribute value update
+#### Request attribute value update
 
 Several methods are added to request the update of Java object properties in the federation execution. The associated Java Class must have been subscribed to as an HLA Object Class.
 
 Optionally a set of `OOattribute` objects can be provided to indicate which properties are to be requested. If no set is provided then all properties are to be `requested.
 
-### Send interaction
+#### Send interaction
 
 Several methods are added to send Java objects in the federation execution as an HLA interaction. The associated Java Class must have been published as an HLA Interaction Class.
 
 Optionally a set `OOparameter` objects can be provided to indicate which properties are to be sent as interaction parameter. If no set is provided then all published properties are to be sent.
 
-### Support methods
+### Ownership Management Services
 
-Several support methods are added.
+Several methods are added for transferrring attribute ownership, using Java objects and properties in the method invocations.
+
+### Support Services
+
+Several support methods are added for getting objects by name.
 
 ## OOFederateAmbassador
 
-### Discover object instance
+### Object Management Services
+
+#### Discover object instance
 
 Callback methods are added to notify the federate on the discovery of an HLA Object Class instance. The related Java Class must have been subscribed to as an HLA Object Class.
 
-### Reflect attribute values
+#### Reflect attribute values
 
 Callback methods are added to notify the federate on an update of Java Class property values in the federation execution. The related Java Class must have been subscribed to as an HLA Object Class.
 
-### Remove object instance
+#### Remove object instance
 
 Callback methods are added to notify the federate on the removal of an HLA Object Class instance. The related Java Class must have been subscribed to as an HLA Object Class.
 
-### Receive interaction
+#### Receive interaction
 
 Callback methods are added to notify the federate on the receipt of a Java object that represents an HLA interaction. The related Java Class must have been subscribed to as an HLA Interaction Class.
+
+### Ownership Management Services
+
+Callback methods are added to notify the federate on attribute ownership changes.
 
 ## OOattribute and OOparameter
 

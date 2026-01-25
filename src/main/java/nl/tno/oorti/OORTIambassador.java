@@ -48,7 +48,7 @@ import java.util.Set;
 /**
  * The OORTIambassador defines the interface that the OORTI ambassador must implement for receiving
  * calls from a federate. This interface extends to RTIambassador interface with additional methods
- * to handle Java Bean classes.
+ * to handle Java Beans.
  *
  * @author bergtwvd
  */

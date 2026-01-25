@@ -29,12 +29,12 @@ The suggested method to include the OORTI library uses Maven. Add the following 
 <dependency>
 	<groupId>nl.tno</groupId>
 	<artifactId>oorti</artifactId>
-	<version>1.0.0</version>
+	<version>2.0.0</version>
 	<type>jar</type>
 </dependency>
 ```
 
-Version 1.0.0 is used as example. Generally, the latest version should be used.
+The artifact version is an example. Generally, the latest version should be used.
 
 ## Use the OORTI
 
