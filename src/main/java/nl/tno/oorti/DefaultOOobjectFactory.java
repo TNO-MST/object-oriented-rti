@@ -11,9 +11,9 @@ import java.lang.reflect.InvocationTargetException;
 public class DefaultOOobjectFactory implements OOobjectFactory {
 
   @Override
-  public <T extends Object> T createObject(Class<T> clazz) throws RTIinternalError {
+  public <C extends Object, T extends C> T createObject(Class<C> clazz) throws RTIinternalError {
     try {
-      return clazz.getConstructor().newInstance();
+      return (T) clazz.getConstructor().newInstance();
     } catch (NoSuchMethodException
         | SecurityException
         | InstantiationException
@@ -25,9 +25,10 @@ public class DefaultOOobjectFactory implements OOobjectFactory {
   }
 
   @Override
-  public <T extends Object> T createInteraction(Class<T> clazz) throws RTIinternalError {
+  public <C extends Object, T extends C> T createInteraction(Class<C> clazz)
+      throws RTIinternalError {
     try {
-      return clazz.getConstructor().newInstance();
+      return (T) clazz.getConstructor().newInstance();
     } catch (NoSuchMethodException
         | SecurityException
         | InstantiationException
@@ -39,12 +40,12 @@ public class DefaultOOobjectFactory implements OOobjectFactory {
   }
 
   @Override
-  public <T extends Object> Class<T> getObjectClass(T object) {
-    return (Class<T>) object.getClass();
+  public <C extends Object, T extends C> Class<C> getObjectClass(T object) {
+    return (Class<C>) object.getClass();
   }
 
   @Override
-  public <T extends Object> Class<T> getInteractionClass(T object) {
-    return (Class<T>) object.getClass();
+  public <C extends Object, T extends C> Class<C> getInteractionClass(T object) {
+    return (Class<C>) object.getClass();
   }
 }

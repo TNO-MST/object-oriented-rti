@@ -28,4 +28,4 @@ The `OORTI` makes use of an `ObjectFactory` to:
 
 The `ObjectFactory` is a federate provided factory and the types of objects created is entirely under the control of the federate. For instance, a federate may sub-class a Java Bean class, and instead can create Java objects of that sub-class.
 
-A default `ObjectFactory` is available.
+A default object factory `DefaultOOobjectFactory` is available.

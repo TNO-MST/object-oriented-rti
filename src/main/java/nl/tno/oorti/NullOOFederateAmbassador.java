@@ -19,6 +19,10 @@ import java.util.Set;
 public class NullOOFederateAmbassador extends NullFederateAmbassador
     implements OOFederateAmbassador {
 
+  ////////////////////////////////
+  // Object Management Services //
+  ////////////////////////////////
+
   @Override
   public void removeObjectInstance(
       Object theObject,
@@ -130,5 +134,89 @@ public class NullOOFederateAmbassador extends NullFederateAmbassador
       OrderType sentOrdering,
       TransportationTypeHandle theTransport,
       SupplementalReceiveInfo receiveInfo)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributesInScope(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributesOutOfScope(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void turnUpdatesOnForObjectInstance(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void turnUpdatesOnForObjectInstance(
+      Object theObject, Set<OOattribute> theAttributes, String updateRateDesignator)
+      throws FederateInternalError {}
+
+  @Override
+  public void turnUpdatesOffForObjectInstance(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void confirmAttributeTransportationTypeChange(
+      Object theObject, Set<OOattribute> theAttributes, TransportationTypeHandle theTransportation)
+      throws FederateInternalError {}
+
+  @Override
+  public void reportAttributeTransportationType(
+      Object theObject, OOattribute theAttribute, TransportationTypeHandle theTransportation)
+      throws FederateInternalError {}
+
+  @Override
+  public void confirmInteractionTransportationTypeChange(
+      Class clazz, TransportationTypeHandle theTransportation) throws FederateInternalError {}
+
+  @Override
+  public void reportInteractionTransportationType(
+      FederateHandle theFederate, Class clazz, TransportationTypeHandle theTransportation)
+      throws FederateInternalError {}
+
+  ///////////////////////////////////
+  // Ownership Management Services //
+  ///////////////////////////////////
+
+  @Override
+  public void requestAttributeOwnershipAssumption(
+      Object theObject, Set<OOattribute> offeredAttributes, byte[] userSuppliedTag)
+      throws FederateInternalError {}
+
+  @Override
+  public void requestDivestitureConfirmation(Object theObject, Set<OOattribute> offeredAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributeOwnershipAcquisitionNotification(
+      Object theObject, Set<OOattribute> securedAttributes, byte[] userSuppliedTag)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributeOwnershipUnavailable(Object theObject, Set<OOattribute> theAttributes)
+      throws FederateInternalError {}
+
+  @Override
+  public void requestAttributeOwnershipRelease(
+      Object theObject, Set<OOattribute> candidateAttributes, byte[] userSuppliedTag)
+      throws FederateInternalError {}
+
+  @Override
+  public void confirmAttributeOwnershipAcquisitionCancellation(
+      Object theObject, Set<OOattribute> theAttributes) throws FederateInternalError {}
+
+  @Override
+  public void informAttributeOwnership(
+      Object theObject, OOattribute theAttribute, FederateHandle theOwner)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributeIsNotOwned(Object theObject, OOattribute theAttribute)
+      throws FederateInternalError {}
+
+  @Override
+  public void attributeIsOwnedByRTI(Object theObject, OOattribute theAttribute)
       throws FederateInternalError {}
 }
