@@ -83,11 +83,9 @@ public class ObjectInstance {
           continue;
         }
 
+        // encode the attribute value
         try {
-          // encode the attribute value to bytes
           byte[] bytes = attribute.getEncoder().encode(value);
-
-          // add to results
           ahvm.put(attribute.getAttributeHandle(), bytes);
         } catch (OOcodecException ex) {
           Logger.getLogger(ObjectInstance.class.getName())
@@ -146,7 +144,7 @@ public class ObjectInstance {
                     attribute.getName(),
                     attribute.getEncoder().toString(),
                     bytes.length,
-                    Helpers.bytesToHex(bytes)
+                    HelperFunctions.bytesToHex(bytes)
                   });
           throw new RTIinternalError(ex.getMessage(), ex);
         }

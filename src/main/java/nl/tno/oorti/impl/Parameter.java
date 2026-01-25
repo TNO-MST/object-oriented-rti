@@ -36,20 +36,20 @@ public class Parameter implements OOparameter {
   }
 
   ParameterHandle getParameterHandle() {
-    return parameterHandle;
+    return this.parameterHandle;
   }
 
   Accessor getAccessor() {
-    return accessor;
+    return this.accessor;
   }
 
   OOencoder getEncoder() {
-    return encoder;
+    return this.encoder;
   }
 
   @Override
   public Object getCookie() {
-    return cookie;
+    return this.cookie;
   }
 
   @Override

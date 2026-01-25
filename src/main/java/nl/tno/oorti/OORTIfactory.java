@@ -26,15 +26,15 @@ public class OORTIfactory {
     return new OORTIambassadorImpl(
         RtiFactoryFactory.getRtiFactory().getRtiAmbassador(),
         new DefaultOOobjectFactory(),
-        properties);
+        this.properties);
   }
 
   public OORTIambassador getRtiAmbassador(RTIambassador rtiamb) throws RTIinternalError {
-    return new OORTIambassadorImpl(rtiamb, new DefaultOOobjectFactory(), properties);
+    return new OORTIambassadorImpl(rtiamb, new DefaultOOobjectFactory(), this.properties);
   }
 
   public OORTIambassador getRtiAmbassador(RTIambassador rtiamb, OOobjectFactory objectFactory)
       throws RTIinternalError {
-    return new OORTIambassadorImpl(rtiamb, objectFactory, properties);
+    return new OORTIambassadorImpl(rtiamb, objectFactory, this.properties);
   }
 }

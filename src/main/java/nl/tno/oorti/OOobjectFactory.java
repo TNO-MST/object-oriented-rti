@@ -10,21 +10,22 @@ import hla.rti1516e.exceptions.RTIinternalError;
  * HLA interaction) given its type (class), and to get the type of an object that was created
  * earlier by the factory.
  *
- * <p>An object factory may create an object y that is an instance of a sub class Y of the requested
- * class X. The type that must be returned for object y must be X.
+ * <p>An object factory may create an object o that is an instance of a sub class T of the requested
+ * class C. The type that must be returned for the object o must be C.
  *
  * @author bergtwvd
  */
 public interface OOobjectFactory {
 
-  <T extends Object> T createObject(Class<T> clazz) throws RTIinternalError, ObjectClassNotDefined;
+  <C extends Object, T extends C> T createObject(Class<C> clazz)
+      throws RTIinternalError, ObjectClassNotDefined;
 
-  <T extends Object> T createInteraction(Class<T> clazz)
+  <C extends Object, T extends C> T createInteraction(Class<C> clazz)
       throws RTIinternalError, InteractionClassNotDefined;
 
-  <T extends Object> Class<T> getObjectClass(T object)
+  <C extends Object, T extends C> Class<C> getObjectClass(T object)
       throws RTIinternalError, ObjectInstanceNotKnown;
 
-  <T extends Object> Class<T> getInteractionClass(T object)
+  <C extends Object, T extends C> Class<C> getInteractionClass(T object)
       throws RTIinternalError, InteractionClassNotDefined;
 }

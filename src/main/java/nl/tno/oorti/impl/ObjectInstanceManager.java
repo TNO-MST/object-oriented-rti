@@ -1,7 +1,6 @@
 package nl.tno.oorti.impl;
 
 import hla.rti1516e.ObjectInstanceHandle;
-import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.ObjectInstanceNotKnown;
 import java.util.Collection;
 import java.util.Map;
@@ -9,17 +8,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import nl.tno.oorti.OOproperties;
 
 /**
- * Thread-safe class to manage ObjectInstances. The collection is accessed by both the federate and
- * RTI ambassador threads.
+ * Thread-safe class to manage ObjectInstances.
  *
  * @author bergtwvd
  */
 public class ObjectInstanceManager {
-  
-  // static properties
+
+  // immutable properties
   private final OOproperties properties;
 
-  // dynamic properties
+  // mutable properties
   private final Map<ObjectInstanceHandle, ObjectInstance> handle2instance =
       new ConcurrentHashMap<>();
   private final Map<Object, ObjectInstance> object2instance = new ConcurrentHashMap<>();
@@ -30,40 +28,35 @@ public class ObjectInstanceManager {
   }
 
   public OOproperties getProperties() {
-    return properties;
+    return this.properties;
   }
 
   public ObjectInstance create(
-      ObjectClass oc, ObjectInstanceHandle instanceHandle, Object theObject, String theName)
-      throws ObjectClassNotDefined {
+      ObjectClass oc, ObjectInstanceHandle instanceHandle, Object theObject, String theName) {
 
-    if (!oc.getClazz().isInstance(theObject)) {
-      throw new ObjectClassNotDefined("Object " + theName + " not of type " + oc.getName());
-    }
+    ObjectInstance oi = new ObjectInstance(this, oc, instanceHandle, theObject, theName);
 
-    ObjectInstance objectInstance = new ObjectInstance(this, oc, instanceHandle, theObject, theName);
+    this.handle2instance.put(oi.getInstanceHandle(), oi);
+    this.name2instance.put(oi.getName(), oi);
+    this.object2instance.put(oi.getObject(), oi);
 
-    handle2instance.put(objectInstance.getInstanceHandle(), objectInstance);
-    name2instance.put(objectInstance.getName(), objectInstance);
-    object2instance.put(objectInstance.getObject(), objectInstance);
-
-    return objectInstance;
+    return oi;
   }
 
   public ObjectInstance getObjectInstanceByHandle(ObjectInstanceHandle handle) {
-    return handle2instance.get(handle);
+    return this.handle2instance.get(handle);
   }
 
   public ObjectInstance getObjectInstanceByObject(Object object) {
-    return object2instance.get(object);
+    return this.object2instance.get(object);
   }
 
   public ObjectInstance getObjectInstanceByName(String name) {
-    return name2instance.get(name);
+    return this.name2instance.get(name);
   }
 
   public ObjectInstance getObjectInstanceIfExists(Object theObject) throws ObjectInstanceNotKnown {
-    ObjectInstance oi = object2instance.get(theObject);
+    ObjectInstance oi = this.object2instance.get(theObject);
     if (oi == null) {
       throw new ObjectInstanceNotKnown(
           "Unknown object of class " + theObject.getClass().getSimpleName());
@@ -71,24 +64,25 @@ public class ObjectInstanceManager {
       return oi;
     }
   }
-  
+
   public ObjectInstance getObjectInstanceIfExists(String theName) throws ObjectInstanceNotKnown {
-    ObjectInstance oi = name2instance.get(theName);
+    ObjectInstance oi = this.name2instance.get(theName);
     if (oi == null) {
       throw new ObjectInstanceNotKnown("Unknown object " + theName);
     } else {
       return oi;
     }
   }
-  
+
   public Collection<ObjectInstance> getObjectInstances() {
-    return object2instance.values();
+    return this.object2instance.values();
   }
-  
+
   public ObjectInstance removeObjectInstance(ObjectInstance objectInstance) {
-    if (object2instance.remove(objectInstance.getObject()) != null)
-      return name2instance.remove(
-          handle2instance.remove(objectInstance.getInstanceHandle()).getName());
+    // remove in reverse order in the create
+    if (this.object2instance.remove(objectInstance.getObject()) != null)
+      return this.name2instance.remove(
+          this.handle2instance.remove(objectInstance.getInstanceHandle()).getName());
     else return null;
   }
 }

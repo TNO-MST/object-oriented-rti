@@ -1,4 +1,4 @@
-package nl.tno.oorti;
+package nl.tno.oorti.impl;
 
 import nl.tno.omt.helpers.OmtMimConstants;
 

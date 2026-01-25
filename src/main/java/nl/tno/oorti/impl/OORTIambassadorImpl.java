@@ -81,13 +81,11 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   final ExecutionContextManager ecm = new ExecutionContextManager();
   final ExecutionContextManager ecmInitial = new ExecutionContextManager();
 
-  // the FederateAmbassador for handling the OO-specific callbacks
-  OOFederateAmbassadorImpl fedamb;
-
   // the callback model used
   CallbackModel callbackModel;
 
-  // MOM related information, shared between the ambassador threads
+  // MOM related information, shared between the two ambassador threads while getting the current
+  // FDD from the RTI in a join federation
   ObjectInstanceHandle hlaFederationInstanceHandle;
   HLAfederation hlaFederation;
 
@@ -120,12 +118,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           AlreadyConnected,
           CallNotAllowedFromWithinCallback,
           RTIinternalError {
-    this.fedamb = new OOFederateAmbassadorImpl(this, federateReference);
+    OOFederateAmbassadorImpl fedamb = new OOFederateAmbassadorImpl(this, federateReference);
 
     if (localSettingsDesignator == null) {
-      this.rtiamb.connect(this.fedamb, callbackModel);
+      this.rtiamb.connect(fedamb, callbackModel);
     } else {
-      this.rtiamb.connect(this.fedamb, callbackModel, localSettingsDesignator);
+      this.rtiamb.connect(fedamb, callbackModel, localSettingsDesignator);
     }
 
     this.callbackModel = callbackModel;
@@ -150,12 +148,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   }
 
   @Override
-  public FederateHandle joinFederationExecution(
-      String federateName,
+  public FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateName, // nullable
       String federateType,
       String federationExecutionName,
-      URL[] additionalFomModules,
-      URL[] currentFddModules)
+      URL[] additionalFomModules, // nullable
+      URL[] currentFddModules) // nullable
       throws CouldNotCreateLogicalTimeFactory,
           FederationExecutionDoesNotExist,
           InconsistentFDD,
@@ -200,6 +198,69 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     }
 
     return handle;
+  }
+
+  @Override
+  public FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateType,
+      String federationExecutionName,
+      URL[] additionalFomModules,
+      URL[] currentFddModules)
+      throws CouldNotCreateLogicalTimeFactory,
+          FederationExecutionDoesNotExist,
+          InconsistentFDD,
+          ErrorReadingFDD,
+          CouldNotOpenFDD,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateAlreadyExecutionMember,
+          NotConnected,
+          CallNotAllowedFromWithinCallback,
+          FederateNameAlreadyInUse,
+          RTIinternalError {
+    return this.joinFederationExecutionWithCurrentFDD(
+        null, federateType, federationExecutionName, additionalFomModules, currentFddModules);
+  }
+
+  @Override
+  public FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateName,
+      String federateType,
+      String federationExecutionName,
+      URL[] currentFddModules)
+      throws CouldNotCreateLogicalTimeFactory,
+          FederationExecutionDoesNotExist,
+          InconsistentFDD,
+          ErrorReadingFDD,
+          CouldNotOpenFDD,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateAlreadyExecutionMember,
+          NotConnected,
+          CallNotAllowedFromWithinCallback,
+          FederateNameAlreadyInUse,
+          RTIinternalError {
+    return this.joinFederationExecutionWithCurrentFDD(
+        federateName, federateType, federationExecutionName, null, currentFddModules);
+  }
+
+  @Override
+  public FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateType, String federationExecutionName, URL[] currentFddModules)
+      throws CouldNotCreateLogicalTimeFactory,
+          FederationExecutionDoesNotExist,
+          InconsistentFDD,
+          ErrorReadingFDD,
+          CouldNotOpenFDD,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateAlreadyExecutionMember,
+          NotConnected,
+          CallNotAllowedFromWithinCallback,
+          FederateNameAlreadyInUse,
+          RTIinternalError {
+    return this.joinFederationExecutionWithCurrentFDD(
+        null, federateType, federationExecutionName, null, currentFddModules);
   }
 
   private ObjectModelType[] getCurrentFDD(URL[] additionalFomModules, URL[] currentFddModules)
@@ -275,13 +336,12 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           this.ecmInitial.create(rtiamb, accessorFactory, encoderFactory, modules, properties);
 
       // subscribe to MOM HLAmanager.HLAfederation to get the HLAcurrentFDD
-      ObjectClass objectClass = ec.getOcm().create(HLAfederation.class);
-      objectClass.addSubscriptions(Set.of("HLAcurrentFDD"));
+      ObjectClass oc = ec.getOcm().create(HLAfederation.class);
+      oc.addSubscriptions(oc.getAttributeByName("HLAcurrentFDD"));
 
       synchronized (this) {
         this.rtiamb.subscribeObjectClassAttributes(
-            objectClass.getClassHandle(),
-            objectClass.createAttributeHandleSetFromAttributes(objectClass.getSubscriptions()));
+            oc.getClassHandle(), oc.createAttributeHandleSet(oc.getSubscriptions()));
 
         for (int i = 0; i < 1000; i++) {
           if (this.callbackModel == CallbackModel.HLA_EVOKED) {
@@ -305,7 +365,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
         }
 
         // unsubscribe as we are not interested in further updates
-        this.rtiamb.unsubscribeObjectClass(objectClass.getClassHandle());
+        this.rtiamb.unsubscribeObjectClass(oc.getClassHandle());
 
         // if we got an instance, delete it
         if (this.hlaFederationInstanceHandle != null) {
@@ -367,7 +427,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           CallNotAllowedFromWithinCallback,
           RTIinternalError,
           FederateNameAlreadyInUse {
-    return joinFederationExecution(
+    return joinFederationExecutionWithCurrentFDD(
         federateName, federateType, federationExecutionName, additionalFomModules, null);
   }
 
@@ -386,7 +446,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           CallNotAllowedFromWithinCallback,
           RTIinternalError {
     try {
-      return joinFederationExecution(
+      return joinFederationExecutionWithCurrentFDD(
           null, federateType, federationExecutionName, additionalFomModules, null);
     } catch (FederateNameAlreadyInUse ex) {
       // should not get here, since we pass nulls
@@ -407,7 +467,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           CallNotAllowedFromWithinCallback,
           RTIinternalError {
     try {
-      return joinFederationExecution(
+      return joinFederationExecutionWithCurrentFDD(
           federateName, federateType, federationExecutionName, null, null);
     } catch (InconsistentFDD | ErrorReadingFDD | CouldNotOpenFDD ex) {
       // should not get here, since we pass nulls
@@ -426,7 +486,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           CallNotAllowedFromWithinCallback,
           RTIinternalError {
     try {
-      return joinFederationExecution(null, federateType, federationExecutionName, null, null);
+      return joinFederationExecutionWithCurrentFDD(
+          null, federateType, federationExecutionName, null, null);
     } catch (InconsistentFDD | ErrorReadingFDD | CouldNotOpenFDD | FederateNameAlreadyInUse ex) {
       // should not get here, since we pass nulls
       throw new RTIinternalError(ex.getMessage(), ex);
@@ -449,12 +510,13 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   /////////////////////////////////////
   // Declaration Management Services //
   /////////////////////////////////////
+
   ////////////////////
   // Object classes //
   ////////////////////
 
   @Override
-  public Set<OOattribute> publishObjectClass(Class clazz)
+  public void publishObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -468,11 +530,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ObjectClass oc = ec.getOcm().create(clazz);
     rtiamb.publishObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
     oc.addPublications();
-    return oc.getPublications();
   }
 
   @Override
-  public Set<OOattribute> publishObjectClass(Class clazz, Set<? extends Object> cookies)
+  public void publishObjectClass(Class clazz, Set<OOattribute> attributes)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -484,12 +545,9 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectClass oc = ec.getOcm().create(clazz);
-
     rtiamb.publishObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSetFromNames(cookies));
-
-    oc.addPublications(cookies);
-    return oc.getPublications();
+        oc.getClassHandle(), oc.createAttributeHandleSet(attributes));
+    oc.addPublications(attributes);
   }
 
   @Override
@@ -511,7 +569,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   }
 
   @Override
-  public Set<OOattribute> subscribeObjectClass(Class clazz)
+  public void subscribeObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -525,11 +583,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ObjectClass oc = ec.getOcm().create(clazz);
     rtiamb.subscribeObjectClassAttributes(oc.getClassHandle(), oc.createAttributeHandleSet());
     oc.addPublications();
-    return oc.getPublications();
   }
 
   @Override
-  public Set<OOattribute> subscribeObjectClass(Class clazz, Set<? extends Object> cookies)
+  public void subscribeObjectClass(Class clazz, Set<OOattribute> attributes)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -542,9 +599,8 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     ObjectClass oc = ec.getOcm().create(clazz);
     rtiamb.subscribeObjectClassAttributes(
-        oc.getClassHandle(), oc.createAttributeHandleSetFromNames(cookies));
-    oc.addPublications(cookies);
-    return oc.getPublications();
+        oc.getClassHandle(), oc.createAttributeHandleSet(attributes));
+    oc.addPublications(attributes);
   }
 
   @Override
@@ -580,7 +636,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   // Interaction classes //
   /////////////////////////
   @Override
-  public Set<OOparameter> publishInteractionClass(Class clazz)
+  public void publishInteractionClass(Class clazz)
       throws InteractionClassNotDefined,
           SaveInProgress,
           RestoreInProgress,
@@ -594,11 +650,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     InteractionClass interactionClass = ec.getIcm().create(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
     interactionClass.addPublications();
-    return interactionClass.getPublications();
   }
 
   @Override
-  public Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> cookies)
+  public void publishInteractionClass(Class clazz, Set<OOparameter> parameters)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -611,8 +666,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     InteractionClass interactionClass = ec.getIcm().create(clazz);
     rtiamb.publishInteractionClass(interactionClass.getClassHandle());
-    interactionClass.addPublications(cookies);
-    return interactionClass.getPublications();
+    interactionClass.addPublications(parameters);
   }
 
   @Override
@@ -632,7 +686,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   }
 
   @Override
-  public Set<OOparameter> subscribeInteractionClass(Class clazz)
+  public void subscribeInteractionClass(Class clazz)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -647,11 +701,10 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     InteractionClass interactionClass = ec.getIcm().create(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
     interactionClass.addSubscriptions();
-    return interactionClass.getSubscriptions();
   }
 
   @Override
-  public Set<OOparameter> subscribeInteractionClass(Class clazz, Set<? extends Object> cookies)
+  public void subscribeInteractionClass(Class clazz, Set<OOparameter> parameters)
       throws FederateNotExecutionMember,
           NotConnected,
           RTIinternalError,
@@ -665,8 +718,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     InteractionClass interactionClass = ec.getIcm().create(clazz);
     rtiamb.subscribeInteractionClass(interactionClass.getClassHandle());
-    interactionClass.addSubscriptions(cookies);
-    return interactionClass.getSubscriptions();
+    interactionClass.addSubscriptions(parameters);
   }
 
   @Override
@@ -699,12 +751,13 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           NotConnected,
           RTIinternalError {
 
-    ExecutionContext ec = ecm.getExecutionContextIfExists();
+    ExecutionContext ec = this.ecm.getExecutionContextIfExists();
 
     ObjectClass oc =
         ec.getOcm().getObjectClassIfExists(this.objectFactory.getObjectClass(theObject));
-    ObjectInstanceHandle instanceHandle = rtiamb.registerObjectInstance(oc.getClassHandle());
-    ec.getOim().create(oc, instanceHandle, theObject, rtiamb.getObjectInstanceName(instanceHandle));
+    ObjectInstanceHandle instanceHandle = this.rtiamb.registerObjectInstance(oc.getClassHandle());
+    ec.getOim()
+        .create(oc, instanceHandle, theObject, this.rtiamb.getObjectInstanceName(instanceHandle));
   }
 
   @Override
@@ -928,9 +981,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     ObjectClass oc = ec.getOcm().getObjectClassIfExists(clazz);
     rtiamb.requestAttributeValueUpdate(
-        oc.getClassHandle(),
-        oc.createAttributeHandleSetFromAttributes(theAttributes),
-        userSuppliedTag);
+        oc.getClassHandle(), oc.createAttributeHandleSet(theAttributes), userSuppliedTag);
   }
 
   @Override
@@ -966,7 +1017,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
     rtiamb.requestAttributeValueUpdate(
         oi.getInstanceHandle(),
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes),
+        oi.getObjectClass().createAttributeHandleSet(theAttributes),
         userSuppliedTag);
   }
 
@@ -1076,8 +1127,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     this.rtiamb.unconditionalAttributeOwnershipDivestiture(oi.getInstanceHandle(), ahs);
   }
 
@@ -1097,8 +1147,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     this.rtiamb.negotiatedAttributeOwnershipDivestiture(
         oi.getInstanceHandle(), ahs, userSuppliedTag);
   }
@@ -1120,8 +1169,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     this.rtiamb.confirmDivestiture(oi.getInstanceHandle(), ahs, userSuppliedTag);
   }
 
@@ -1142,8 +1190,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(desiredAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(desiredAttributes);
     this.rtiamb.attributeOwnershipAcquisition(oi.getInstanceHandle(), ahs, userSuppliedTag);
   }
 
@@ -1165,8 +1212,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(desiredAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(desiredAttributes);
     this.rtiamb.attributeOwnershipAcquisitionIfAvailable(oi.getInstanceHandle(), ahs);
   }
 
@@ -1184,8 +1230,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     this.rtiamb.attributeOwnershipReleaseDenied(oi.getInstanceHandle(), ahs);
   }
 
@@ -1204,8 +1249,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     AttributeHandleSet ahs2 =
         this.rtiamb.attributeOwnershipDivestitureIfWanted(oi.getInstanceHandle(), ahs);
     return oi.getObjectClass().createAttributeSet(ahs2);
@@ -1227,8 +1271,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     this.rtiamb.cancelNegotiatedAttributeOwnershipDivestiture(oi.getInstanceHandle(), ahs);
   }
 
@@ -1247,8 +1290,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
     ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
-    AttributeHandleSet ahs =
-        oi.getObjectClass().createAttributeHandleSetFromAttributes(theAttributes);
+    AttributeHandleSet ahs = oi.getObjectClass().createAttributeHandleSet(theAttributes);
     this.rtiamb.cancelAttributeOwnershipAcquisition(oi.getInstanceHandle(), ahs);
   }
 
@@ -1317,9 +1359,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           RTIinternalError {
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
-    return ec.getOcm()
-        .create(clazz)
-        .getAttributeByNameIfExists(OmtJavaMapping.toOmtName(attributeName));
+    return ec.getOcm().create(clazz).getAttributeIfExists(OmtJavaMapping.toOmtName(attributeName));
   }
 
   @Override
@@ -1334,9 +1374,25 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     Set<OOattribute> attributes = new HashSet<>();
     for (String name : attributeName) {
-      Attribute a =
-          ec.getOcm().create(clazz).getAttributeByNameIfExists(OmtJavaMapping.toOmtName(name));
+      Attribute a = ec.getOcm().create(clazz).getAttributeIfExists(OmtJavaMapping.toOmtName(name));
       attributes.add(a);
+    }
+    return attributes;
+  }
+
+  @Override
+  public Set<OOattribute> getAttributes(Class clazz)
+      throws ObjectClassNotDefined,
+          AttributeNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    Set<OOattribute> attributes = new HashSet<>();
+    for (Attribute attribute : ec.getOcm().create(clazz).getAttributes()) {
+      attributes.add(attribute);
     }
     return attributes;
   }
@@ -1351,9 +1407,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     ExecutionContext ec = ecm.getExecutionContextIfExists();
 
-    return ec.getIcm()
-        .create(clazz)
-        .getParameterByNameIfExists(OmtJavaMapping.toOmtName(parameterName));
+    return ec.getIcm().create(clazz).getParameterIfExists(OmtJavaMapping.toOmtName(parameterName));
   }
 
   @Override
@@ -1368,9 +1422,24 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
 
     Set<OOparameter> parameters = new HashSet<>();
     for (String name : parameterName) {
-      Parameter p =
-          ec.getIcm().create(clazz).getParameterByNameIfExists(OmtJavaMapping.toOmtName(name));
+      Parameter p = ec.getIcm().create(clazz).getParameterIfExists(OmtJavaMapping.toOmtName(name));
       parameters.add(p);
+    }
+    return parameters;
+  }
+
+  @Override
+  public Set<OOparameter> getParameters(Class clazz)
+      throws InteractionClassNotDefined,
+          InteractionParameterNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    Set<OOparameter> parameters = new HashSet<>();
+    for (Parameter attribute : ec.getIcm().create(clazz).getParameters()) {
+      parameters.add(attribute);
     }
     return parameters;
   }

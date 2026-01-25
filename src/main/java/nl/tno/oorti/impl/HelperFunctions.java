@@ -5,7 +5,7 @@ import nl.tno.omt.helpers.OmtMimConstants;
 /**
  * @author bergtwvd
  */
-class Helpers {
+class HelperFunctions {
 
   private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
@@ -38,7 +38,7 @@ class Helpers {
    * @param rootName of root class
    * @return FQ OMT class name
    */
-  static String getFullyQualifiedClassName(Class clazz, String rootName) {
+  private static String getFullyQualifiedClassName(Class clazz, String rootName) {
     if (clazz == Object.class) {
       return rootName;
     }

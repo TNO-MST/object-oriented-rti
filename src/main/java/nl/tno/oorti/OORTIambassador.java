@@ -76,7 +76,7 @@ public interface OORTIambassador extends RTIambassador {
           CallNotAllowedFromWithinCallback,
           RTIinternalError;
 
-  FederateHandle joinFederationExecution(
+  FederateHandle joinFederationExecutionWithCurrentFDD(
       String federateName,
       String federateType,
       String federationExecutionName,
@@ -95,11 +95,64 @@ public interface OORTIambassador extends RTIambassador {
           FederateNameAlreadyInUse,
           RTIinternalError;
 
+  FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateType,
+      String federationExecutionName,
+      URL[] additionalFomModules,
+      URL[] currentFddModules)
+      throws CouldNotCreateLogicalTimeFactory,
+          FederationExecutionDoesNotExist,
+          InconsistentFDD,
+          ErrorReadingFDD,
+          CouldNotOpenFDD,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateAlreadyExecutionMember,
+          NotConnected,
+          CallNotAllowedFromWithinCallback,
+          FederateNameAlreadyInUse,
+          RTIinternalError;
+
+  FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateName,
+      String federateType,
+      String federationExecutionName,
+      URL[] currentFddModules)
+      throws CouldNotCreateLogicalTimeFactory,
+          FederationExecutionDoesNotExist,
+          InconsistentFDD,
+          ErrorReadingFDD,
+          CouldNotOpenFDD,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateAlreadyExecutionMember,
+          NotConnected,
+          CallNotAllowedFromWithinCallback,
+          FederateNameAlreadyInUse,
+          RTIinternalError;
+
+  FederateHandle joinFederationExecutionWithCurrentFDD(
+      String federateType,
+      String federationExecutionName,
+      URL[] currentFddModules)
+      throws CouldNotCreateLogicalTimeFactory,
+          FederationExecutionDoesNotExist,
+          InconsistentFDD,
+          ErrorReadingFDD,
+          CouldNotOpenFDD,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateAlreadyExecutionMember,
+          NotConnected,
+          CallNotAllowedFromWithinCallback,
+          FederateNameAlreadyInUse,
+          RTIinternalError;
+
   /////////////////////////////////////
   // Declaration Management Services //
   /////////////////////////////////////
 
-  Set<OOattribute> publishObjectClass(Class clazz)
+  void publishObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -108,7 +161,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOattribute> publishObjectClass(Class clazz, Set<? extends Object> cookies)
+  void publishObjectClass(Class clazz, Set<OOattribute> attributes)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -117,7 +170,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOattribute> subscribeObjectClass(Class clazz)
+  void subscribeObjectClass(Class clazz)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -126,7 +179,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOattribute> subscribeObjectClass(Class clazz, Set<? extends Object> cookies)
+  void subscribeObjectClass(Class clazz, Set<OOattribute> attributes)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
           SaveInProgress,
@@ -154,7 +207,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOparameter> publishInteractionClass(Class clazz)
+  void publishInteractionClass(Class clazz)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           SaveInProgress,
@@ -163,7 +216,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOparameter> publishInteractionClass(Class clazz, Set<? extends Object> cookies)
+  void publishInteractionClass(Class clazz, Set<OOparameter> parameters)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           SaveInProgress,
@@ -172,7 +225,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOparameter> subscribeInteractionClass(Class clazz)
+  void subscribeInteractionClass(Class clazz)
       throws FederateServiceInvocationsAreBeingReportedViaMOM,
           InteractionClassNotDefined,
           InteractionParameterNotDefined,
@@ -182,7 +235,7 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOparameter> subscribeInteractionClass(Class clazz, Set<? extends Object> cookies)
+  void subscribeInteractionClass(Class clazz, Set<OOparameter> parameters)
       throws FederateServiceInvocationsAreBeingReportedViaMOM,
           InteractionClassNotDefined,
           InteractionParameterNotDefined,
@@ -559,7 +612,14 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOattribute> getAttributes(Class clazz, String ... attributeName)
+  Set<OOattribute> getAttributes(Class clazz, String... attributeName)
+      throws ObjectClassNotDefined,
+          AttributeNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  Set<OOattribute> getAttributes(Class clazz)
       throws ObjectClassNotDefined,
           AttributeNotDefined,
           FederateNotExecutionMember,
@@ -573,7 +633,14 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
-  Set<OOparameter> getParameters(Class clazz, String ... parameterName)
+  Set<OOparameter> getParameters(Class clazz, String... parameterName)
+      throws InteractionClassNotDefined,
+          InteractionParameterNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
+  Set<OOparameter> getParameters(Class clazz)
       throws InteractionClassNotDefined,
           InteractionParameterNotDefined,
           FederateNotExecutionMember,

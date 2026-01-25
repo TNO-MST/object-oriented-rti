@@ -36,20 +36,20 @@ public class Attribute implements OOattribute {
   }
 
   public AttributeHandle getAttributeHandle() {
-    return attributeHandle;
+    return this.attributeHandle;
   }
 
   public Accessor getAccessor() {
-    return accessor;
+    return this.accessor;
   }
 
   public OOencoder getEncoder() {
-    return encoder;
+    return this.encoder;
   }
   
   @Override
   public Object getCookie() {
-    return cookie;
+    return this.cookie;
   }
 
   @Override

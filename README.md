@@ -69,4 +69,3 @@ A complete example is provided in the documentation section.
 - [Example](doc/Example.md)
 - [OORTI Factory](doc/OORTIfactory.md)
 - [RTI interface extensions](doc/Extensions.md)
-- [Caveats](doc/Caveats.md)

@@ -49,124 +49,85 @@ public class InteractionClass {
     this.factory = factory;
 
     for (Parameter parameter : parameterSet) {
-      name2parameter.put(parameter.getName(), parameter);
-      handle2parameter.put(parameter.getParameterHandle(), parameter);
+      this.name2parameter.put(parameter.getName(), parameter);
+      this.handle2parameter.put(parameter.getParameterHandle(), parameter);
     }
   }
 
   public Class getClazz() {
-    return clazz;
+    return this.clazz;
   }
 
   public String getName() {
-    return name;
+    return this.name;
   }
 
   public InteractionClassHandle getClassHandle() {
-    return classHandle;
+    return this.classHandle;
   }
 
   public Set<Parameter> getParameters() {
-    return parameters;
+    return this.parameters;
   }
 
   public Parameter getParameterByName(String name) {
     return this.name2parameter.get(name);
   }
 
-  public Parameter getParameterByNameIfExists(String name) throws InteractionParameterNotDefined {
-    Parameter paraneter = name2parameter.get(name);
-    if (paraneter != null) return paraneter;
+  public Parameter getParameterIfExists(String name) throws InteractionParameterNotDefined {
+    Parameter parameter = this.name2parameter.get(name);
+    if (parameter != null) return parameter;
     else throw new InteractionParameterNotDefined(name);
   }
 
   public Set<OOparameter> getSubscriptions() {
-    return subParmSet;
+    return this.subParmSet;
   }
 
   public Set<OOparameter> getPublications() {
-    return pubParmSet;
+    return this.pubParmSet;
   }
 
   public void addPublications() {
-    for (Parameter parameter : this.parameters) {
-      pubParmSet.add(parameter);
-    }
+    this.pubParmSet.addAll(this.parameters);
   }
 
-  public void addPublications(Set<? extends Object> cookies) throws InteractionParameterNotDefined {
-    for (Object cookie : cookies) {
-      String parameterName = cookie.toString();
-      Parameter parameter = this.name2parameter.get(parameterName);
-      if (parameter != null) {
-        parameter.setCookie(cookie);
-        pubParmSet.add(parameter);
-      } else
-        throw new InteractionParameterNotDefined(
-            "Unknown parameter " + parameterName + " for class " + name);
-    }
+  public void addPublications(Set<OOparameter> parameters) {
+    this.pubParmSet.addAll(parameters);
   }
 
   public void addSubscriptions() {
-    for (Parameter parameter : this.parameters) {
-      subParmSet.add(parameter);
-    }
+    this.subParmSet.addAll(this.parameters);
   }
 
-  public void addSubscriptions(Set<? extends Object> cookies)
-      throws InteractionParameterNotDefined {
-    for (Object cookie : cookies) {
-      String parameterName = cookie.toString();
-      Parameter parameter = this.name2parameter.get(parameterName);
-      if (parameter != null) {
-        parameter.setCookie(cookie);
-        subParmSet.add(parameter);
-      } else
-        throw new InteractionParameterNotDefined(
-            "Unknown parameter " + parameterName + " for class " + name);
-    }
+  public void addSubscriptions(Set<OOparameter> parameters) {
+    this.subParmSet.addAll(parameters);
   }
 
   public void removePublications() {
     this.pubParmSet.clear();
   }
 
-  public void removePublications(Set<String> theParameterNames)
-      throws InteractionParameterNotDefined {
-    for (String parameterName : theParameterNames) {
-      Parameter parameter = this.name2parameter.get(parameterName);
-      if (parameter != null) {
-        pubParmSet.remove(parameter);
-      } else
-        throw new InteractionParameterNotDefined(
-            "Unknown parameter " + parameterName + " for class " + name);
-    }
+  public void removePublications(Set<OOparameter> parameters) {
+    this.pubParmSet.removeAll(parameters);
   }
 
   public void removeSubscriptions() {
     this.subParmSet.clear();
   }
 
-  public void removeSubscriptions(Set<String> theParameterNames)
-      throws InteractionParameterNotDefined {
-    for (String parameterName : theParameterNames) {
-      Parameter parameter = this.name2parameter.get(parameterName);
-      if (parameter != null) {
-        subParmSet.remove(parameter);
-      } else
-        throw new InteractionParameterNotDefined(
-            "Unknown parameter " + parameterName + " for class " + name);
-    }
+  public void removeSubscriptions(Set<OOparameter> parameters) {
+    this.subParmSet.removeAll(parameters);
   }
 
   public ParameterHandleValueMap serialize(Object theInteraction) throws RTIinternalError {
-    return serialize(theInteraction, pubParmSet);
+    return serialize(theInteraction, this.pubParmSet);
   }
 
   public ParameterHandleValueMap serialize(Object theInteraction, Set<OOparameter> parameterSet)
       throws RTIinternalError {
     try {
-      ParameterHandleValueMap parameterValueMap = factory.create(parameterSet.size());
+      ParameterHandleValueMap parameterValueMap = this.factory.create(parameterSet.size());
 
       for (OOparameter ooParameter : parameterSet) {
         Parameter parameter = (Parameter) ooParameter;
@@ -200,7 +161,7 @@ public class InteractionClass {
       throw new RTIinternalError(ex.getMessage(), ex);
     }
   }
-
+  
   public Set<OOparameter> deserialize(
       ParameterHandleValueMap parameterValueMap, Object theInteraction) throws RTIinternalError {
     try {
@@ -227,7 +188,7 @@ public class InteractionClass {
                     parameter.getName(),
                     parameter.getEncoder().toString(),
                     entry.getValue().length,
-                    Helpers.bytesToHex(entry.getValue())
+                    HelperFunctions.bytesToHex(entry.getValue())
                   });
           throw new RTIinternalError(ex.getMessage(), ex);
         }

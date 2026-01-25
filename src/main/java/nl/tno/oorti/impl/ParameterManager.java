@@ -32,6 +32,6 @@ class ParameterManager {
   }
 
   Parameter getParameterByHandle(ParameterHandle parameterHandle) {
-    return handle2parameter.get(parameterHandle);
+    return this.handle2parameter.get(parameterHandle);
   }
 }

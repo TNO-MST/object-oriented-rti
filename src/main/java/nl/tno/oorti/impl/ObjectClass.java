@@ -6,6 +6,7 @@ import hla.rti1516e.AttributeHandleSetFactory;
 import hla.rti1516e.AttributeHandleValueMapFactory;
 import hla.rti1516e.ObjectClassHandle;
 import hla.rti1516e.exceptions.AttributeNotDefined;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,25 +48,25 @@ public class ObjectClass {
     this.ahsFactory = ahsFactory;
 
     for (Attribute attribute : attributeSet) {
-      name2attribute.put(attribute.getName(), attribute);
-      handle2attribute.put(attribute.getAttributeHandle(), attribute);
+      this.name2attribute.put(attribute.getName(), attribute);
+      this.handle2attribute.put(attribute.getAttributeHandle(), attribute);
     }
   }
 
   public Class getClazz() {
-    return clazz;
+    return this.clazz;
   }
 
   public String getName() {
-    return name;
+    return this.name;
   }
 
   public ObjectClassHandle getClassHandle() {
-    return classHandle;
+    return this.classHandle;
   }
 
   public Set<Attribute> getAttributes() {
-    return attributes;
+    return this.attributes;
   }
 
   public AttributeHandleValueMapFactory getAttributeHandleValueMapFactory() {
@@ -76,8 +77,8 @@ public class ObjectClass {
     return this.name2attribute.get(name);
   }
 
-  public Attribute getAttributeByNameIfExists(String name) throws AttributeNotDefined {
-    Attribute attribute = name2attribute.get(name);
+  public Attribute getAttributeIfExists(String name) throws AttributeNotDefined {
+    Attribute attribute = this.name2attribute.get(name);
     if (attribute != null) return attribute;
     else throw new AttributeNotDefined(name);
   }
@@ -86,82 +87,66 @@ public class ObjectClass {
     return this.handle2attribute.get(handle);
   }
 
-  public Attribute getAttributeByHandleIfExists(AttributeHandle handle) throws AttributeNotDefined {
-    Attribute attribute = handle2attribute.get(handle);
+  public Attribute getAttributeIfExists(AttributeHandle handle) throws AttributeNotDefined {
+    Attribute attribute = this.handle2attribute.get(handle);
     if (attribute != null) return attribute;
     else throw new AttributeNotDefined(handle.toString());
   }
 
   public Set<OOattribute> getSubscriptions() {
-    return subAttributeSet;
+    return this.subAttributeSet;
   }
 
   public Set<OOattribute> getPublications() {
-    return pubAttributeSet;
+    return this.pubAttributeSet;
   }
 
   public void addPublications() {
-    for (Attribute attribute : this.attributes) {
-      pubAttributeSet.add(attribute);
-    }
+    this.pubAttributeSet.addAll(this.attributes);
   }
 
-  public void addPublications(Set<? extends Object> cookies) throws AttributeNotDefined {
-    // first check the inputs
-    for (Object cookie : cookies) {
-      this.getAttributeByNameIfExists(cookie.toString());
-    }
+  public void addPublications(Set<OOattribute> attributes) {
+    this.pubAttributeSet.addAll(attributes);
+  }
 
-    for (Object cookie : cookies) {
-      pubAttributeSet.add(this.getAttributeByNameIfExists(cookie.toString()));
-    }
+  public void addPublications(OOattribute ... attributes) {
+    pubAttributeSet.addAll(Arrays.asList(attributes));
   }
 
   public void addSubscriptions() {
-    for (Attribute attribute : this.attributes) {
-      subAttributeSet.add(attribute);
-    }
+    this.subAttributeSet.addAll(this.attributes);
   }
 
-  public void addSubscriptions(Set<? extends Object> cookies) throws AttributeNotDefined {
-    // first check the inputs
-    for (Object cookie : cookies) {
-      this.getAttributeByNameIfExists(cookie.toString());
-    }
-
-    for (Object cookie : cookies) {
-      subAttributeSet.add(this.getAttributeByNameIfExists(cookie.toString()));
-    }
+  public void addSubscriptions(Set<OOattribute> attributes) {
+    this.subAttributeSet.addAll(attributes);
   }
 
-  public void removePublications() {
+ public void addSubscriptions(OOattribute ... attributes) {
+    this.subAttributeSet.addAll(Arrays.asList(attributes));
+  }
+
+ public void removePublications() {
     this.pubAttributeSet.clear();
   }
 
-  public void removePublications(Set<String> theAttributeNames) throws AttributeNotDefined {
-    // first check the inputs
-    for (String attributeName : theAttributeNames) {
-      this.getAttributeByNameIfExists(attributeName);
-    }
+  public void removePublications(Set<OOattribute> attributes) {
+    pubAttributeSet.removeAll(attributes);
+  }
 
-    for (String attributeName : theAttributeNames) {
-      pubAttributeSet.remove(this.getAttributeByNameIfExists(attributeName));
-    }
+  public void removePublications(OOattribute ... attributes) {
+    pubAttributeSet.removeAll(Arrays.asList(attributes));
   }
 
   public void removeSubscriptions() {
     this.subAttributeSet.clear();
   }
 
-  public void removeSubscriptions(Set<String> theAttributeNames) throws AttributeNotDefined {
-    // first check the inputs
-    for (String attributeName : theAttributeNames) {
-      this.getAttributeByNameIfExists(attributeName);
-    }
+  public void removeSubscriptions(Set<OOattribute> attributes) {
+    subAttributeSet.removeAll(attributes);
+  }
 
-    for (String attributeName : theAttributeNames) {
-      subAttributeSet.remove(this.getAttributeByNameIfExists(attributeName));
-    }
+  public void removeSubscriptions(OOattribute ... attributes) {
+    subAttributeSet.removeAll(Arrays.asList(attributes));
   }
 
   public AttributeHandleSet createAttributeHandleSet() {
@@ -172,16 +157,7 @@ public class ObjectClass {
     return ahs;
   }
 
-  public AttributeHandleSet createAttributeHandleSetFromNames(Set<? extends Object> cookies)
-      throws AttributeNotDefined {
-    AttributeHandleSet ahs = this.ahsFactory.create();
-    for (Object cookie : cookies) {
-      ahs.add(this.getAttributeByNameIfExists(cookie.toString()).getAttributeHandle());
-    }
-    return ahs;
-  }
-
-  public AttributeHandleSet createAttributeHandleSetFromAttributes(Set<OOattribute> attributes) {
+  public AttributeHandleSet createAttributeHandleSet(Set<OOattribute> attributes) {
     AttributeHandleSet ahs = this.ahsFactory.create();
     for (OOattribute attribute : attributes) {
       ahs.add(((Attribute) attribute).getAttributeHandle());
@@ -193,7 +169,7 @@ public class ObjectClass {
       throws AttributeNotDefined {
     Set<OOattribute> attributeSet = new HashSet<>();
     for (AttributeHandle attributeHandle : handleSet) {
-      attributeSet.add(this.getAttributeByHandleIfExists(attributeHandle));
+      attributeSet.add(this.getAttributeIfExists(attributeHandle));
     }
     return attributeSet;
   }

@@ -12,7 +12,6 @@ import hla.rti1516e.exceptions.NameNotFound;
 import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.RTIinternalError;
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -28,8 +27,7 @@ import nl.tno.oorti.ooencoder.OOencoderFactory;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 
 /**
- * Thread-safe class to manage InteractionClasses. The collection is accessed by both the federate
- * and RTI ambassador threads.
+ * Thread-safe class to manage InteractionClasses.
  *
  * @author bergtwvd
  */
@@ -74,14 +72,14 @@ public class InteractionClassManager {
     if (ic != null) return ic;
 
     try {
-      String className = Helpers.getFullyQualifiedInteractionClassName(clazz);
-      InteractionClassHandle classHandle = rtiamb.getInteractionClassHandle(className);
+      String className = HelperFunctions.getFullyQualifiedInteractionClassName(clazz);
+      InteractionClassHandle classHandle = this.rtiamb.getInteractionClassHandle(className);
       Set<Parameter> parameterSet = this.createParameterSet(clazz, className, classHandle);
 
       ic = new InteractionClass(clazz, className, classHandle, parameterSet, this.paramHVMFactory);
 
-      clazz2class.put(ic.getClazz(), ic);
-      handle2class.put(ic.getClassHandle(), ic);
+      this.clazz2class.put(ic.getClazz(), ic);
+      this.handle2class.put(ic.getClassHandle(), ic);
 
       return ic;
     } catch (NameNotFound ex) {
@@ -91,7 +89,7 @@ public class InteractionClassManager {
 
   /** This method returns the OMT parameter, given its name, or null when none found. */
   private nl.tno.omt.Parameter getOmtParameterByName(
-      Set<nl.tno.omt.Parameter> parameters, String name) {
+      Set<nl.tno.omt.Parameter> parameters, String name) throws InteractionParameterNotDefined {
     for (nl.tno.omt.Parameter parameter : parameters) {
       if (parameter.getName().getValue().equals(name)) {
         return parameter;
@@ -110,43 +108,40 @@ public class InteractionClassManager {
 
     // get the parameters as defined in the FOM
     Set<nl.tno.omt.Parameter> omtParameters =
-        OmtFunctions.getInteractionClassParameters(modules, className);
+        OmtFunctions.getInteractionClassParameters(this.modules, className);
     if (omtParameters == null) {
       // something went wrong
       throw new InteractionClassNotDefined("Cannot get parameters of Class " + className);
     }
 
-    // create a parameter for each Java class field
-    Collection<Field> fields = ClassUtils.getFields(clazz);
-
     Set<Parameter> parameterSet = new HashSet<>();
 
-    for (Field field : fields) {
+    // create a parameter for each Java class property
+    for (Field field : ClassUtils.getFields(clazz)) {
       try {
-        String fieldName = field.getName();
-        String parameterName = OmtJavaMapping.toOmtName(fieldName);
+        String parameterName = OmtJavaMapping.toOmtName(field.getName());
 
-        // check if the field exists in the FOM
         nl.tno.omt.Parameter omtParameter =
             this.getOmtParameterByName(omtParameters, parameterName);
         if (omtParameter == null) {
-          throw new InteractionParameterNotDefined(
-              "Java Class attribute " + field.getName() + " not defined in FOM");
+          // Java property is not in the FOM, skip
+          continue;
         }
 
-        ParameterHandle parameterHandle = rtiamb.getParameterHandle(classHandle, parameterName);
+        ParameterHandle parameterHandle =
+            this.rtiamb.getParameterHandle(classHandle, parameterName);
 
-        Parameter parameter = pam.getParameterByHandle(parameterHandle);
+        Parameter parameter = this.pam.getParameterByHandle(parameterHandle);
         if (parameter == null) {
           // create accessor for the Java Class field
-          Accessor accessor = accessorFactory.createAccessor(field);
+          Accessor accessor = this.accessorFactory.createAccessor(field);
 
           // create codec for the Java Class field
           OOencoder codec =
-              encoderFactory.createOOencoder(
+              this.encoderFactory.createOOencoder(
                   field.getGenericType(), omtParameter.getDataType().getValue());
 
-          parameter = pam.create(parameterName, parameterHandle, accessor, codec);
+          parameter = this.pam.create(parameterName, parameterHandle, accessor, codec);
         }
 
         parameterSet.add(parameter);
@@ -162,17 +157,13 @@ public class InteractionClassManager {
     return parameterSet;
   }
 
-  public InteractionClass getClassByClazz(Class clazz) {
-    return clazz2class.get(clazz);
-  }
-
-  public InteractionClass getClassByHandle(InteractionClassHandle classHandle) {
-    return handle2class.get(classHandle);
+  public InteractionClass getInteractionClassByHandle(InteractionClassHandle classHandle) {
+    return this.handle2class.get(classHandle);
   }
 
   public InteractionClass getInteractionClassIfExists(Class clazz)
       throws InteractionClassNotDefined {
-    InteractionClass ic = clazz2class.get(clazz);
+    InteractionClass ic = this.clazz2class.get(clazz);
     if (ic == null) {
       throw new InteractionClassNotDefined("Unknown class " + clazz.getSimpleName());
     } else return ic;

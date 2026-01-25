@@ -30,7 +30,6 @@ import hla.rti1516e.exceptions.ObjectInstanceNotKnown;
 import hla.rti1516e.exceptions.RTIinternalError;
 import hla.rti1516e.exceptions.RestoreInProgress;
 import hla.rti1516e.exceptions.SaveInProgress;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 import nl.tno.oorti.OOFederateAmbassador;
 import nl.tno.oorti.OOattribute;
@@ -229,7 +228,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     ExecutionContext ec = rtiamb.ecm.getExecutionContext();
     if (ec == null) return;
 
-    InteractionClass ic = ec.getIcm().getClassByHandle(classHandle);
+    InteractionClass ic = ec.getIcm().getInteractionClassByHandle(classHandle);
     if (ic == null) {
       federateReference.receiveInteraction(
           classHandle,
@@ -277,7 +276,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     ExecutionContext ec = rtiamb.ecm.getExecutionContext();
     if (ec == null) return;
 
-    InteractionClass ic = ec.getIcm().getClassByHandle(classHandle);
+    InteractionClass ic = ec.getIcm().getInteractionClassByHandle(classHandle);
     if (ic == null) {
       federateReference.receiveInteraction(
           classHandle,
@@ -321,7 +320,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     ExecutionContext ec = rtiamb.ecm.getExecutionContext();
     if (ec == null) return;
 
-    InteractionClass ic = ec.getIcm().getClassByHandle(classHandle);
+    InteractionClass ic = ec.getIcm().getInteractionClassByHandle(classHandle);
     if (ic == null) {
       federateReference.receiveInteraction(
           classHandle, theParameters, userSuppliedTag, sentOrdering, theTransport, receiveInfo);
@@ -348,7 +347,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     }
 
     // get the object class of the discovered instance
-    ObjectClass oc = ec.getOcm().getClassByHandle(classHandle);
+    ObjectClass oc = ec.getOcm().getObjectClassByHandle(classHandle);
 
     // keep the instance handle for quick lookup later
     rtiamb.hlaFederationInstanceHandle = instanceHandle;
@@ -370,7 +369,6 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     } catch (AttributeNotDefined
         | FederateNotExecutionMember
         | NotConnected
-        | ObjectClassNotDefined
         | ObjectInstanceNotKnown
         | RTIinternalError
         | RestoreInProgress
@@ -398,7 +396,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       ExecutionContext ec = rtiamb.ecm.getExecutionContext();
       if (ec == null) return;
 
-      ObjectClass oc = ec.getOcm().getClassByHandle(classHandle);
+      ObjectClass oc = ec.getOcm().getObjectClassByHandle(classHandle);
       if (oc == null) {
         federateReference.discoverObjectInstance(
             instanceHandle, classHandle, theObjectName, producingFederate);
@@ -429,7 +427,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       ExecutionContext ec = rtiamb.ecm.getExecutionContext();
       if (ec == null) return;
 
-      ObjectClass oc = ec.getOcm().getClassByHandle(classHandle);
+      ObjectClass oc = ec.getOcm().getObjectClassByHandle(classHandle);
       if (oc == null) {
         federateReference.discoverObjectInstance(instanceHandle, classHandle, theObjectName);
       } else {
@@ -870,7 +868,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
           instanceHandle, theAttribute, theTransportation);
     } else {
       try {
-        Attribute a = oi.getObjectClass().getAttributeByHandleIfExists(theAttribute);
+        Attribute a = oi.getObjectClass().getAttributeIfExists(theAttribute);
         federateReference.reportAttributeTransportationType(oi.getObject(), a, theTransportation);
       } catch (AttributeNotDefined ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
@@ -886,7 +884,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     ExecutionContext ec = rtiamb.ecm.getExecutionContext();
     if (ec == null) return;
 
-    InteractionClass ic = ec.getIcm().getClassByHandle(classHandle);
+    InteractionClass ic = ec.getIcm().getInteractionClassByHandle(classHandle);
     if (ic == null) {
       federateReference.confirmInteractionTransportationTypeChange(classHandle, theTransportation);
     } else {
@@ -905,7 +903,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
     ExecutionContext ec = rtiamb.ecm.getExecutionContext();
     if (ec == null) return;
 
-    InteractionClass ic = ec.getIcm().getClassByHandle(classHandle);
+    InteractionClass ic = ec.getIcm().getInteractionClassByHandle(classHandle);
     if (ic == null) {
       federateReference.reportInteractionTransportationType(
           theFederate, classHandle, theTransportation);
@@ -1071,7 +1069,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       federateReference.informAttributeOwnership(instanceHandle, theAttribute, theOwner);
     } else {
       try {
-        Attribute a = oi.getObjectClass().getAttributeByHandleIfExists(theAttribute);
+        Attribute a = oi.getObjectClass().getAttributeIfExists(theAttribute);
         federateReference.informAttributeOwnership(oi.getObject(), a, theOwner);
       } catch (AttributeNotDefined ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
@@ -1091,7 +1089,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       federateReference.attributeIsNotOwned(instanceHandle, theAttribute);
     } else {
       try {
-        Attribute a = oi.getObjectClass().getAttributeByHandleIfExists(theAttribute);
+        Attribute a = oi.getObjectClass().getAttributeIfExists(theAttribute);
         federateReference.attributeIsNotOwned(oi.getObject(), a);
       } catch (AttributeNotDefined ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
@@ -1112,7 +1110,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       federateReference.attributeIsOwnedByRTI(instanceHandle, theAttribute);
     } else {
       try {
-        Attribute a = oi.getObjectClass().getAttributeByHandleIfExists(theAttribute);
+        Attribute a = oi.getObjectClass().getAttributeIfExists(theAttribute);
         federateReference.attributeIsOwnedByRTI(oi.getObject(), a);
       } catch (AttributeNotDefined ex) {
         throw new FederateInternalError(ex.getMessage(), ex);

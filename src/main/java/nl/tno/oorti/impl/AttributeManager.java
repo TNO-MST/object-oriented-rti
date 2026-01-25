@@ -29,6 +29,6 @@ class AttributeManager {
   }
 
   Attribute getAttributeByHandle(AttributeHandle attributeHandle) {
-    return handle2attribute.get(attributeHandle);
+    return this.handle2attribute.get(attributeHandle);
   }
 }

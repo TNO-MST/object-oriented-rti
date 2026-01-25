@@ -13,7 +13,7 @@ import nl.tno.omt.VariantRecordDataType.Alternative;
 import nl.tno.omt.VariantRecordDataTypesType.VariantRecordData;
 import nl.tno.omt.helpers.OmtFunctions;
 import nl.tno.omt.helpers.OmtJavaMapping;
-import nl.tno.oorti.EnumFunctions;
+import nl.tno.oorti.impl.EnumFunctions;
 import nl.tno.oorti.accessor.Accessor;
 import nl.tno.oorti.accessor.ClassUtils;
 import nl.tno.oorti.ooencoder.exceptions.InvalidClassStructure;

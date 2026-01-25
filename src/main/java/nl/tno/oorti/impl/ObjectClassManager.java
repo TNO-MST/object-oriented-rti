@@ -13,7 +13,6 @@ import hla.rti1516e.exceptions.NotConnected;
 import hla.rti1516e.exceptions.ObjectClassNotDefined;
 import hla.rti1516e.exceptions.RTIinternalError;
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,8 +28,7 @@ import nl.tno.oorti.ooencoder.OOencoderFactory;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 
 /**
- * Thread-safe class to manage ObjectClasses. The collection is accessed by both the federate and
- * RTI ambassador threads.
+ * Thread-safe class to manage ObjectClasses.
  *
  * @author bergtwvd
  */
@@ -76,14 +74,16 @@ public class ObjectClassManager {
     if (oc != null) return oc;
 
     try {
-      String classsName = Helpers.getFullyQualifiedObjectClassName(clazz);
-      ObjectClassHandle classHandle = rtiamb.getObjectClassHandle(classsName);
+      String classsName = HelperFunctions.getFullyQualifiedObjectClassName(clazz);
+      ObjectClassHandle classHandle = this.rtiamb.getObjectClassHandle(classsName);
       Set<Attribute> attributeSet = this.createAttributeSet(clazz, classsName, classHandle);
-            
-      oc = new ObjectClass(clazz, classsName, classHandle, attributeSet, this.ahvmFactory, this.ahsFactory);
 
-      clazz2class.put(oc.getClazz(), oc);
-      handle2class.put(oc.getClassHandle(), oc);
+      oc =
+          new ObjectClass(
+              clazz, classsName, classHandle, attributeSet, this.ahvmFactory, this.ahsFactory);
+
+      this.clazz2class.put(oc.getClazz(), oc);
+      this.handle2class.put(oc.getClassHandle(), oc);
 
       return oc;
     } catch (NameNotFound ex) {
@@ -93,7 +93,7 @@ public class ObjectClassManager {
 
   /** This method returns the OMT attribute, given its name, or null when none found. */
   private nl.tno.omt.Attribute getOmtAttributeByName(
-      Set<nl.tno.omt.Attribute> attributes, String name) {
+      Set<nl.tno.omt.Attribute> attributes, String name) throws AttributeNotDefined {
     for (nl.tno.omt.Attribute attribute : attributes) {
       if (attribute.getName().getValue().equals(name)) {
         return attribute;
@@ -112,43 +112,40 @@ public class ObjectClassManager {
 
     // get the attributes as defined in the FOM
     Set<nl.tno.omt.Attribute> omtAttributeSet =
-        OmtFunctions.getObjectClassAttributes(modules, className);
+        OmtFunctions.getObjectClassAttributes(this.modules, className);
     if (omtAttributeSet == null) {
       // something went wrong
       throw new ObjectClassNotDefined("Cannot get attributes of Class " + className);
     }
 
-    // create an attribute for each Java class field
-    Collection<Field> fields = ClassUtils.getFields(clazz);
-
     Set<Attribute> attributeSet = new HashSet<>();
 
-    for (Field field : fields) {
+    // create an attribute for each Java class property
+    for (Field field : ClassUtils.getFields(clazz)) {
       try {
-        String fieldName = field.getName();
-        String attributeName = OmtJavaMapping.toOmtName(fieldName);
+        String attributeName = OmtJavaMapping.toOmtName(field.getName());
 
-        // check if the name exists in the FOM
         nl.tno.omt.Attribute omtAttribute =
-            this.getOmtAttributeByName(omtAttributeSet, OmtJavaMapping.toOmtName(fieldName));
+            this.getOmtAttributeByName(omtAttributeSet, attributeName);
         if (omtAttribute == null) {
-          throw new AttributeNotDefined(
-              "Java Class attribute " + fieldName + " not defined in FOM");
+          // Java property is not in the FOM, skip
+          continue;
         }
 
-        AttributeHandle attributeHandle = rtiamb.getAttributeHandle(classHandle, attributeName);
+        AttributeHandle attributeHandle =
+            this.rtiamb.getAttributeHandle(classHandle, attributeName);
 
-        Attribute attribute = atm.getAttributeByHandle(attributeHandle);
+        Attribute attribute = this.atm.getAttributeByHandle(attributeHandle);
         if (attribute == null) {
           // create accessor for the Java Class field
-          Accessor accessor = accessorFactory.createAccessor(field);
+          Accessor accessor = this.accessorFactory.createAccessor(field);
 
           // create codec for the Java Class field
           OOencoder codec =
-              encoderFactory.createOOencoder(
+              this.encoderFactory.createOOencoder(
                   field.getGenericType(), omtAttribute.getDataType().getValue());
 
-          attribute = atm.create(attributeName, attributeHandle, accessor, codec);
+          attribute = this.atm.create(attributeName, attributeHandle, accessor, codec);
         }
 
         attributeSet.add(attribute);
@@ -164,16 +161,12 @@ public class ObjectClassManager {
     return attributeSet;
   }
 
-  public ObjectClass getClassByClazz(Class clazz) {
-    return clazz2class.get(clazz);
-  }
-
-  public ObjectClass getClassByHandle(ObjectClassHandle handle) {
-    return handle2class.get(handle);
+  public ObjectClass getObjectClassByHandle(ObjectClassHandle handle) {
+    return this.handle2class.get(handle);
   }
 
   public ObjectClass getObjectClassIfExists(Class clazz) throws ObjectClassNotDefined {
-    ObjectClass oc = clazz2class.get(clazz);
+    ObjectClass oc = this.clazz2class.get(clazz);
     if (oc == null) {
       throw new ObjectClassNotDefined("Unknown class " + clazz.getSimpleName());
     } else {
