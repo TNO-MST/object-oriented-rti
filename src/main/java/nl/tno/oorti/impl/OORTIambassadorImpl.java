@@ -1333,6 +1333,48 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
   //////////////////////////
 
   @Override
+  public String getObjectClassName(Class theClass)
+      throws ObjectClassNotDefined, FederateNotExecutionMember, NotConnected, RTIinternalError {
+    
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    return ec.getOcm().getObjectClassIfExists(theClass).getName();
+  }
+
+  @Override
+  public Class getObjectClass(String theClassName)
+      throws ObjectClassNotDefined, FederateNotExecutionMember, NotConnected, RTIinternalError {
+
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    return ec.getOcm().getObjectClassIfExists(theClassName).getClazz();
+  }
+
+  @Override
+  public String getInteractionClassName(Class theClass)
+      throws InteractionClassNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    return ec.getIcm().getInteractionClassIfExists(theClass).getName();
+  }
+
+  @Override
+  public Class getInteractionClass(String theClassName)
+      throws InteractionClassNotDefined,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    return ec.getIcm().getInteractionClassIfExists(theClassName).getClazz();
+  }
+
+  @Override
   public String getObjectName(Object theObject)
       throws ObjectInstanceNotKnown, FederateNotExecutionMember {
 

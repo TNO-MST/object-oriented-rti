@@ -45,6 +45,7 @@ public class InteractionClassManager {
   private final Map<Class, InteractionClass> clazz2class = new ConcurrentHashMap<>();
   private final Map<InteractionClassHandle, InteractionClass> handle2class =
       new ConcurrentHashMap<>();
+  private final Map<String, InteractionClass> name2class = new ConcurrentHashMap<>();
 
   public InteractionClassManager(
       RTIambassador rtiamb,
@@ -80,6 +81,7 @@ public class InteractionClassManager {
 
       this.clazz2class.put(ic.getClazz(), ic);
       this.handle2class.put(ic.getClassHandle(), ic);
+      this.name2class.put(ic.getName(), ic);
 
       return ic;
     } catch (NameNotFound ex) {
@@ -166,6 +168,14 @@ public class InteractionClassManager {
     InteractionClass ic = this.clazz2class.get(clazz);
     if (ic == null) {
       throw new InteractionClassNotDefined("Unknown class " + clazz.getSimpleName());
+    } else return ic;
+  }
+
+  public InteractionClass getInteractionClassIfExists(String name)
+      throws InteractionClassNotDefined {
+    InteractionClass ic = this.name2class.get(name);
+    if (ic == null) {
+      throw new InteractionClassNotDefined("Unknown class " + name);
     } else return ic;
   }
 }

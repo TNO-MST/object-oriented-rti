@@ -132,9 +132,7 @@ public interface OORTIambassador extends RTIambassador {
           RTIinternalError;
 
   FederateHandle joinFederationExecutionWithCurrentFDD(
-      String federateType,
-      String federationExecutionName,
-      URL[] currentFddModules)
+      String federateType, String federationExecutionName, URL[] currentFddModules)
       throws CouldNotCreateLogicalTimeFactory,
           FederationExecutionDoesNotExist,
           InconsistentFDD,
@@ -598,6 +596,18 @@ public interface OORTIambassador extends RTIambassador {
   //////////////////////////
   // RTI Support Services //
   //////////////////////////
+
+  String getObjectClassName(Class theClass)
+      throws ObjectClassNotDefined, FederateNotExecutionMember, NotConnected, RTIinternalError;
+
+  Class getObjectClass(String theClassName)
+      throws ObjectClassNotDefined, FederateNotExecutionMember, NotConnected, RTIinternalError;
+
+  String getInteractionClassName(Class theClass)
+      throws InteractionClassNotDefined, FederateNotExecutionMember, NotConnected, RTIinternalError;
+
+  Class getInteractionClass(String theClassName)
+      throws InteractionClassNotDefined, FederateNotExecutionMember, NotConnected, RTIinternalError;
 
   String getObjectName(Object theObject)
       throws ObjectInstanceNotKnown, FederateNotExecutionMember, NotConnected, RTIinternalError;
