@@ -80,6 +80,8 @@ public class TestSerializerInteraction extends NullFederateAmbassador {
 
     Assertions.assertEquals(Message.class, ic1.getClazz());
     Assertions.assertEquals(Message.class, ic2.getClazz());
+    Assertions.assertEquals("HLAinteractionRoot.Message", ic1.getName());
+    Assertions.assertEquals("HLAinteractionRoot.Message", ic2.getName());
     Assertions.assertEquals(1, map.size());
     Assertions.assertEquals(1, parameterSet.size());
     Assertions.assertEquals(theMessage1.getContents(), theMessage2.getContents());
