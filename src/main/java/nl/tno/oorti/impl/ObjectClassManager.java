@@ -46,6 +46,7 @@ public class ObjectClassManager {
   // mutable properties
   private final Map<Class, ObjectClass> clazz2class = new ConcurrentHashMap<>();
   private final Map<ObjectClassHandle, ObjectClass> handle2class = new ConcurrentHashMap<>();
+  private final Map<String, ObjectClass> name2class = new ConcurrentHashMap<>();
 
   public ObjectClassManager(
       RTIambassador rtiamb,
@@ -74,16 +75,17 @@ public class ObjectClassManager {
     if (oc != null) return oc;
 
     try {
-      String classsName = HelperFunctions.getFullyQualifiedObjectClassName(clazz);
-      ObjectClassHandle classHandle = this.rtiamb.getObjectClassHandle(classsName);
-      Set<Attribute> attributeSet = this.createAttributeSet(clazz, classsName, classHandle);
+      String className = HelperFunctions.getFullyQualifiedObjectClassName(clazz);
+      ObjectClassHandle classHandle = this.rtiamb.getObjectClassHandle(className);
+      Set<Attribute> attributeSet = this.createAttributeSet(clazz, className, classHandle);
 
       oc =
           new ObjectClass(
-              clazz, classsName, classHandle, attributeSet, this.ahvmFactory, this.ahsFactory);
+              clazz, className, classHandle, attributeSet, this.ahvmFactory, this.ahsFactory);
 
       this.clazz2class.put(oc.getClazz(), oc);
       this.handle2class.put(oc.getClassHandle(), oc);
+      this.name2class.put(className, oc);
 
       return oc;
     } catch (NameNotFound ex) {
@@ -169,6 +171,15 @@ public class ObjectClassManager {
     ObjectClass oc = this.clazz2class.get(clazz);
     if (oc == null) {
       throw new ObjectClassNotDefined("Unknown class " + clazz.getSimpleName());
+    } else {
+      return oc;
+    }
+  }
+
+  public ObjectClass getObjectClassIfExists(String name) throws ObjectClassNotDefined {
+    ObjectClass oc = this.name2class.get(name);
+    if (oc == null) {
+      throw new ObjectClassNotDefined("Unknown class " + name);
     } else {
       return oc;
     }
