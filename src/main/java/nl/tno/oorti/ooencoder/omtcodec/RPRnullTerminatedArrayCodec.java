@@ -66,12 +66,20 @@ class RPRnullTerminatedArrayCodec implements OmtDatatypeCodec {
   }
 
   @Override
-  public final int getEncodedLength(int position, Object value) {
+  public final int getEncodedLength(int position, Object value) throws InvalidValue {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+    
     return position + ((String) value).length() + 1;
   }
 
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+    
     String asciiString = ((String) value);
 
     if (asciiString.length() < this.minCardinality || asciiString.length() > this.maxCardinality) {

@@ -15,6 +15,8 @@ class HLAoctetPairBECodec implements OmtBasicDatatypeCodec {
 
   static final int OCTETBOUNDARY = 2;
   static final int ENCODEDLENGTH = 2;
+  
+  final BasicData dt;
 
   HLAoctetPairBECodec(OmtCodecFactory codecFactory, Type type, BasicData dt)
       throws InvalidType, InvalidClassStructure {
@@ -24,9 +26,15 @@ class HLAoctetPairBECodec implements OmtBasicDatatypeCodec {
       throw new InvalidClassStructure("Missing Type");
     }
 
+    if (dt == null) {
+      throw new InvalidType("Missing OMT datatype");
+    }
+
     if (!clazz.equals(Character.class) && !clazz.equals(char.class)) {
       throw new InvalidType("Expected Character class, but got " + clazz.getSimpleName());
     }
+    
+    this.dt = dt;
   }
 
   @Override
@@ -53,13 +61,21 @@ class HLAoctetPairBECodec implements OmtBasicDatatypeCodec {
   }
 
   @Override
-  public final int getEncodedLength(int position, Object value) {
+  public final int getEncodedLength(int position, Object value) throws InvalidValue {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     return position + ENCODEDLENGTH;
   }
 
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value)
-      throws ByteWrapperOutOfBoundsException {
+      throws ByteWrapperOutOfBoundsException, InvalidValue {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     byteWrapper.putShort((short) (char) value);
   }
 

@@ -36,6 +36,10 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
 
   @Override
   public int getEncodedLength(int position, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+    
     try {
       // save start position
       int offset = position;
@@ -77,6 +81,10 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
 
   @Override
   public void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+    
     try {
       // save start position
       int offset = byteWrapper.getPos();

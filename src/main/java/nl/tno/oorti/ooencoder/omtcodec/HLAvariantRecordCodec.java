@@ -31,10 +31,12 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
   class AccessorCodec {
 
+    String name;
     Accessor accessor;
     OmtDatatypeCodec codec;
 
-    AccessorCodec(Accessor accessor, OmtDatatypeCodec codec) {
+    AccessorCodec(String name, Accessor accessor, OmtDatatypeCodec codec) {
+      this.name = name;
       this.accessor = accessor;
       this.codec = codec;
     }
@@ -135,7 +137,7 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
       OmtDatatypeCodec codec =
           codecFactory.createDatatype(field.getGenericType(), alternative.getDataType().getValue());
 
-      AccessorCodec accessorCodec = new AccessorCodec(accessor, codec);
+      AccessorCodec accessorCodec = new AccessorCodec(alternativeName, accessor, codec);
 
       // For this alternative, add for each enumerator the accessorCodec to the lookup map.
       // The format for enumerator values is: 'HLAother' | <name> | '[' <name> .. <name> ']' |
@@ -246,11 +248,23 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
   @Override
   public int getEncodedLength(int position, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     try {
       // save start position
       int offset = position;
 
       Object discriminant = this.discriminantAccessor.get(value);
+
+      if (discriminant == null) {
+        throw new InvalidValue(
+            "Invalid null value for discrimant "
+                + OmtJavaMapping.toJavaName(dt.getDiscriminant().getValue())
+                + " of datatype "
+                + dt.getName().getValue());
+      }
 
       // add the encoded length of the discriminant
       position = this.discriminantCodec.getEncodedLength(position, discriminant);
@@ -261,8 +275,16 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
         position += this.paddingSize(position - offset, this.maxVariantOctetBoundary);
 
         // ... plus the encoded length of the variant
-        position =
-            accessorCodec.codec.getEncodedLength(position, accessorCodec.accessor.get(value));
+        Object variant = accessorCodec.accessor.get(value);
+        if (variant == null) {
+          throw new InvalidValue(
+              "Invalid null value for variant "
+                  + accessorCodec.name
+                  + " of datatype "
+                  + dt.getName().getValue());
+        }
+
+        position = accessorCodec.codec.getEncodedLength(position, variant);
       } else {
         if (discriminant.equals(hlaUnknownEnum) || this.hlaOtherAccessorCodec == null) {
           throw new InvalidValue(
@@ -272,9 +294,16 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
           position += this.paddingSize(position - offset, this.maxVariantOctetBoundary);
 
           // ... plus the encoded length of the variant
-          position =
-              hlaOtherAccessorCodec.codec.getEncodedLength(
-                  position, hlaOtherAccessorCodec.accessor.get(value));
+          Object variant = hlaOtherAccessorCodec.accessor.get(value);
+          if (variant == null) {
+            throw new InvalidValue(
+                "Invalid null value for variant "
+                    + hlaOtherAccessorCodec.name
+                    + " of datatype "
+                    + dt.getName().getValue());
+          }
+
+          position = hlaOtherAccessorCodec.codec.getEncodedLength(position, variant);
         }
       }
 
@@ -286,6 +315,10 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
   @Override
   public void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     try {
       int offset = byteWrapper.getPos();
       Object discriminant = this.discriminantAccessor.get(value);
