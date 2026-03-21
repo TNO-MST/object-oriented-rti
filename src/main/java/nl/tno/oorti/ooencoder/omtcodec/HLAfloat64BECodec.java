@@ -16,6 +16,8 @@ class HLAfloat64BECodec implements OmtBasicDatatypeCodec {
   static final int OCTETBOUNDARY = 8;
   static final int ENCODEDLENGTH = 8;
 
+  final BasicData dt;
+
   HLAfloat64BECodec(OmtCodecFactory codecFactory, Type type, BasicData dt)
       throws InvalidType, InvalidClassStructure {
     Class clazz = (Class) type;
@@ -24,9 +26,15 @@ class HLAfloat64BECodec implements OmtBasicDatatypeCodec {
       throw new InvalidClassStructure("Missing Type");
     }
 
+    if (dt == null) {
+      throw new InvalidType("Missing OMT datatype");
+    }
+
     if (!clazz.equals(Double.class) && !clazz.equals(double.class)) {
       throw new InvalidType("Expected Double class, but got " + clazz.getSimpleName());
     }
+    
+    this.dt = dt;
   }
 
   @Override
@@ -53,13 +61,21 @@ class HLAfloat64BECodec implements OmtBasicDatatypeCodec {
   }
 
   @Override
-  public final int getEncodedLength(int position, Object value) {
+  public final int getEncodedLength(int position, Object value) throws InvalidValue {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     return position + ENCODEDLENGTH;
   }
 
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value)
-      throws ByteWrapperOutOfBoundsException {
+      throws ByteWrapperOutOfBoundsException, InvalidValue {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     byteWrapper.putDouble((double) value);
   }
 

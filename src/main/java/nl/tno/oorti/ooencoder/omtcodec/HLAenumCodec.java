@@ -185,7 +185,7 @@ class HLAenumCodec implements OmtDatatypeCodec {
   @Override
   public final int getEncodedLength(int position, Object value) throws OOcodecException {
     if (value == null) {
-      throw new InvalidValue("Invalid null value for enumerator");
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
     }
 
     // not allowed to encode the HLA_UNKNOWN_ENUM
@@ -213,7 +213,7 @@ class HLAenumCodec implements OmtDatatypeCodec {
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
     if (value == null) {
-      throw new InvalidValue("Invalid null value for enumerator");
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
     }
 
     if (value == this.unknownEnum) {
