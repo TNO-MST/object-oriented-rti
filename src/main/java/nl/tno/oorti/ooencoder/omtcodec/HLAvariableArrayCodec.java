@@ -162,6 +162,10 @@ class HLAvariableArrayCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
   @Override
   public final int getEncodedLength(int position, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + this.componentName);
+    }
+
     switch (this.datatype) {
       default:
       case ARRAY:
@@ -200,6 +204,10 @@ class HLAvariableArrayCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + this.componentName);
+    }
+
     switch (this.datatype) {
       default:
       case ARRAY:

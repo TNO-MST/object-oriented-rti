@@ -3,6 +3,7 @@ package nl.tno.oorti.ooencoder.omtcodec;
 import java.lang.reflect.Type;
 import nl.tno.omt.VariantRecordDataTypesType;
 import nl.tno.oorti.ooencoder.exceptions.InvalidClassStructure;
+import nl.tno.oorti.ooencoder.exceptions.InvalidValue;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 
 /**
@@ -21,6 +22,10 @@ class RPRextendedVariantRecordCodec extends HLAvariantRecordCodec {
 
   @Override
   public int getEncodedLength(int position, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+    
     try {
       Object discriminant = this.discriminantAccessor.get(value);
 
@@ -46,6 +51,10 @@ class RPRextendedVariantRecordCodec extends HLAvariantRecordCodec {
 
   @Override
   public void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+    
     try {
       Object discriminant = this.discriminantAccessor.get(value);
 

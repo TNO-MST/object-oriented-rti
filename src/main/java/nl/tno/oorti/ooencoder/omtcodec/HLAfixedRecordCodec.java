@@ -11,6 +11,7 @@ import nl.tno.omt.FixedRecordDataTypesType.FixedRecordData;
 import nl.tno.omt.helpers.OmtJavaMapping;
 import nl.tno.oorti.ooencoder.exceptions.InvalidClassStructure;
 import nl.tno.oorti.ooencoder.exceptions.InvalidType;
+import nl.tno.oorti.ooencoder.exceptions.InvalidValue;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 
 /**
@@ -149,14 +150,33 @@ class HLAfixedRecordCodec extends HLAdataElementCodec implements OmtDatatypeCode
 
   @Override
   public final int getEncodedLength(int position, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     try {
       if (memberAccessors.length > 0) {
         for (int i = 0; i < memberFieldCodecs.length - 1; i++) {
           // add size of component i
           OmtDatatypeCodec codec = memberFieldCodecs[i];
           Accessor accessor = this.memberAccessors[i];
-          position =
-              codec.getEncodedLength(position, accessor == null ? null : accessor.get(value));
+
+          if (accessor != null) {
+            Object fieldValue = accessor.get(value);
+            if (fieldValue == null) {
+              throw new InvalidValue(
+                  "Invalid null value for field "
+                      + this.memberNames[i]
+                      + " of datatype "
+                      + dt.getName().getValue());
+            }
+
+            position = codec.getEncodedLength(position, fieldValue);
+          } else {
+            // this is a field with a padding encoding, use a null value
+            // and the padding codec must return the padding length
+            position = codec.getEncodedLength(position, null);
+          }
 
           // add padding
           position += this.paddingSize(position, memberFieldCodecs[i + 1].getOctetBoundary());
@@ -165,7 +185,23 @@ class HLAfixedRecordCodec extends HLAdataElementCodec implements OmtDatatypeCode
         // add size of last component
         OmtDatatypeCodec codec = memberFieldCodecs[memberFieldCodecs.length - 1];
         Accessor accessor = this.memberAccessors[memberFieldCodecs.length - 1];
-        position = codec.getEncodedLength(position, accessor == null ? null : accessor.get(value));
+
+        if (accessor != null) {
+          Object fieldValue = accessor.get(value);
+          if (fieldValue == null) {
+            throw new InvalidValue(
+                "Invalid null value for field "
+                    + this.memberNames[memberFieldCodecs.length - 1]
+                    + " of datatype "
+                    + dt.getName().getValue());
+          }
+
+          position = codec.getEncodedLength(position, fieldValue);
+        } else {
+          // this is a field with a padding encoding, use a null value
+          // and the padding codec must return the padding length
+          position = codec.getEncodedLength(position, null);
+        }
       }
 
       return position;
@@ -176,6 +212,10 @@ class HLAfixedRecordCodec extends HLAdataElementCodec implements OmtDatatypeCode
 
   @Override
   public final void encode(ByteArrayWrapper byteWrapper, Object value) throws OOcodecException {
+    if (value == null) {
+      throw new InvalidValue("Invalid null value for datatype " + dt.getName().getValue());
+    }
+
     try {
       if (memberAccessors.length > 0) {
         for (int i = 0; i < memberAccessors.length - 1; i++) {
