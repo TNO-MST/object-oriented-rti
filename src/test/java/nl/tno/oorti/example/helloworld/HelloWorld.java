@@ -11,58 +11,65 @@ import nl.tno.oorti.OOparameter;
 
 public class HelloWorld extends NullOOFederateAmbassador {
 
-	public void demo() throws RTIexception {
-		// create the OORTI Ambassador
-		OORTIambassador rtiamb = new OORTIfactory().getRtiAmbassador();
+  public void demo() throws RTIexception {
 
-		// connect to the RTI in evoked mode
-		rtiamb.connect(this, CallbackModel.HLA_EVOKED);
+    // From demo purposes, use a bindable loopback address for the Portico RTI.
+    System.setProperty("portico.jgroups.udp.bindAddress", "LOOPBACK");
 
-		// setup module URL
-		URL[] modules = new URL[]{this.getClass().getResource("/foms/Message.xml")};
+    // And switch off enforcement for uniqnue federate names.
+    System.setProperty("portico.uniqueFederateNames", "false");
 
-		// Attempt to create a new federation
-		try {
-			rtiamb.createFederationExecution("federationName", modules);
-		} catch (FederationExecutionAlreadyExists ex) {
-		}
+    // create the OORTI Ambassador
+    OORTIambassador rtiamb = new OORTIfactory().getRtiAmbassador();
 
-		// join the federation execution
-		rtiamb.joinFederationExecution("federateType", "federationName", modules);
+    // connect to the RTI in evoked mode
+    rtiamb.connect(this, CallbackModel.HLA_EVOKED);
 
-		// publish and subscribe to the class of interest
-		rtiamb.publishInteractionClass(Message.class);
-		rtiamb.subscribeInteractionClass(Message.class);
+    // setup module URL
+    URL[] modules = new URL[] {this.getClass().getResource("/foms/Message.xml")};
 
-		// send and receive a message a few times
-		for (int i = 0; i < 60; i++) {
-			Message msg = new Message();
-			msg.setContents("Message" + i);
-			rtiamb.sendInteraction(msg, null);
-			System.out.println("Sent: " + msg.getContents());
-			rtiamb.evokeCallback(1);
-		}
+    // Attempt to create a new federation
+    try {
+      rtiamb.createFederationExecution("federationName", modules);
+    } catch (FederationExecutionAlreadyExists ex) {
+    }
 
-		// resign and disconnect
-		rtiamb.resignFederationExecution(ResignAction.NO_ACTION);
-		rtiamb.disconnect();
-	}
+    // join the federation execution
+    rtiamb.joinFederationExecution("federateType", "federationName", modules);
 
-	@Override
-	public void receiveInteraction(
-			Object theInteraction,
-			Set<OOparameter> theParameters,
-			byte[] userSuppliedTag,
-			OrderType sentOrdering,
-			TransportationTypeHandle theTransport,
-			SupplementalReceiveInfo receiveInfo)
-			throws FederateInternalError {
-		// print the message received
-		Message theMessage = (Message) theInteraction;
-		System.out.println("Received: " + theMessage.getContents());
-	}
+    // publish and subscribe to the class of interest
+    rtiamb.publishInteractionClass(Message.class);
+    rtiamb.subscribeInteractionClass(Message.class);
 
-	public static void main(String[] args) throws RTIexception {
-		new HelloWorld().demo();
-	}
+    // send and receive a message a few times
+    for (int i = 0; i < 60; i++) {
+      Message msg = new Message();
+      msg.setContents("Message" + i);
+      rtiamb.sendInteraction(msg, null);
+      System.out.println("Sent: " + msg.getContents());
+      rtiamb.evokeMultipleCallbacks(1, 1);
+    }
+
+    // resign and disconnect
+    rtiamb.resignFederationExecution(ResignAction.NO_ACTION);
+    rtiamb.disconnect();
+  }
+
+  @Override
+  public void receiveInteraction(
+      Object theInteraction,
+      Set<OOparameter> theParameters,
+      byte[] userSuppliedTag,
+      OrderType sentOrdering,
+      TransportationTypeHandle theTransport,
+      SupplementalReceiveInfo receiveInfo)
+      throws FederateInternalError {
+    // print the message received
+    Message theMessage = (Message) theInteraction;
+    System.out.println("Received: " + theMessage.getContents());
+  }
+
+  public static void main(String[] args) throws RTIexception {
+    new HelloWorld().demo();
+  }
 }
