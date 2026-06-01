@@ -47,7 +47,7 @@ mvn deploy:deploy-file \
   -Durl=https://repo.example.com/repository/maven-releases/
 ````
 
-Note that the repositoryId must match the credentials that are configured in your `~/.m2/settings.xml`:
+Note that the `repositoryId` must match the credentials that are configured in your `~/.m2/settings.xml`:
 
 ````
 <settings>
@@ -102,5 +102,4 @@ The MaK JAR file can be included in your project's POM as the following dependen
 </dependency>
 ````
 
-Since the MaK RTI is implemented in C++ and is linked as a lib file (on Windows) with your application, you need to have these libraries installed on your host machine. The HLA JAR is only a Java wrapper for these lib files. For further information on how to do this, refer to the MaK RTI user documentation.
-
+Since the MaK RTI (LRC) is implemented in C++ and is linked as a set of (Windows or Linux) library files with your application, you need to have these libraries installed on your host machine. The HLA JAR is only a Java wrapper for these library files. For further information on how to do this, refer to the MaK RTI user documentation.
