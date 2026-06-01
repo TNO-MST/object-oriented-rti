@@ -69,3 +69,4 @@ A complete example is provided in the documentation section.
 - [Example](doc/Example.md)
 - [OORTI Factory](doc/OORTIfactory.md)
 - [RTI interface extensions](doc/Extensions.md)
+- [Create Maven artifacts for LRC JARs](doc/Mavenize.md)
