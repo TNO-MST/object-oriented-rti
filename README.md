@@ -39,7 +39,7 @@ The use of the OORTI library in an application requires an HLA RTI implementatio
 The Portico RTI is an open source RTI where the Maven artifacts are already available through the TNO MST Maven Central repository.
 For further information see: https://github.com/TNO-MST/portico-rti.
 
-The Pitch RTI and MaK RTI are commercial RTIs and further information on how to make the proprietary RTI Java libraries available through a Maven repository, see the Documentation section.
+The Pitch RTI and MaK RTI are commercial RTIs and further information on how to make the proprietary RTI Java libraries available through a Maven repository, see the documentation section.
 
 ## Example: Create an OORTI ambassador
 The following code snippet provides an example on how to get an OORTIambassador object in your application.
