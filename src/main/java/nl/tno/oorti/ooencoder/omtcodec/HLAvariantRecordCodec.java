@@ -260,7 +260,7 @@ class HLAvariantRecordCodec extends HLAdataElementCodec implements OmtDatatypeCo
 
       if (discriminant == null) {
         throw new InvalidValue(
-            "Invalid null value for discrimant "
+            "Invalid null value for discriminant "
                 + OmtJavaMapping.toJavaName(dt.getDiscriminant().getValue())
                 + " of datatype "
                 + dt.getName().getValue());

@@ -2,6 +2,7 @@ package nl.tno.oorti.ooencoder.omtcodec;
 
 import java.lang.reflect.Type;
 import nl.tno.omt.VariantRecordDataTypesType.VariantRecordData;
+import nl.tno.omt.helpers.OmtJavaMapping;
 import nl.tno.oorti.ooencoder.exceptions.InvalidClassStructure;
 import nl.tno.oorti.ooencoder.exceptions.InvalidType;
 import nl.tno.oorti.ooencoder.exceptions.InvalidValue;
@@ -46,6 +47,14 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
 
       Object discriminant = this.discriminantAccessor.get(value);
 
+      if (discriminant == null) {
+        throw new InvalidValue(
+            "Invalid null value for discriminant "
+                + OmtJavaMapping.toJavaName(dt.getDiscriminant().getValue())
+                + " of datatype "
+                + dt.getName().getValue());
+      }
+      
       // add the encoded length of the discriminant
       position = this.discriminantCodec.getEncodedLength(position, discriminant);
 
@@ -61,12 +70,17 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
         position += this.paddingSize(position - offset, VARIANT_OCTET_BOUNDARY);
 
         // ... plus the encoded length of the variant
-        position =
-            accessorCodec.codec.getEncodedLength(position, accessorCodec.accessor.get(value));
-      } else {
-        throw new InvalidValue(
-            "Unspecified enumerator for discriminant " + discriminant.toString());
-      }
+        Object variant = accessorCodec.accessor.get(value);
+        if (variant == null) {
+          throw new InvalidValue(
+              "Invalid null value for variant "
+                  + accessorCodec.name
+                  + " of datatype "
+                  + dt.getName().getValue());
+        }
+
+        position = accessorCodec.codec.getEncodedLength(position, variant);
+      } // else there is no variant to add
 
       return position;
     } catch (ReflectiveOperationException ex) {
@@ -114,8 +128,8 @@ class HLAextendableVariantRecordCodec extends HLAvariantRecordCodec {
         byteWrapper.putPadding(variantPadding);
         accessorCodec.codec.encode(byteWrapper, variant);
       } else {
-        throw new InvalidValue(
-            "Unspecified enumerator for discriminant " + discriminant.toString());
+        // there is no variant, i.e. the length is zero
+        byteWrapper.putInt(0);
       }
     } catch (ReflectiveOperationException ex) {
       throw new InvalidClassStructure(ex.getMessage(), ex);
