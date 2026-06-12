@@ -12,6 +12,7 @@ import nl.tno.oorti.ooencoder.OOencoder;
 import nl.tno.oorti.ooencoder.OOencoderFactory;
 import nl.tno.oorti.ooencoder.OOencoderFactoryFactory;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
+import nl.tno.oorti.test.netn4.datatypes.TaskProgressVariantRecord;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -64,7 +65,7 @@ public class TestHLAextendableVariantRecord {
 
 		return rec;
 	}
-
+  
 	@Test
 	public void testTaskDefinitionVariantRecord() throws OOcodecException {
 		OOencoder encoder = factory.createOOencoder(TaskDefinitionVariantRecord.class);
@@ -97,6 +98,34 @@ public class TestHLAextendableVariantRecord {
 		Assertions.assertEquals(in.getMoveToLocation().getMoveType().getValue(), out.getMoveToLocation().getMoveType().getValue());
 		Assertions.assertEquals(in.getMoveToLocation().getPath().length, out.getMoveToLocation().getPath().length);
 		Assertions.assertEquals(in.getMoveToLocation().getSpeed(), out.getMoveToLocation().getSpeed(), 0);
+	}
+
+  TaskProgressVariantRecord createTaskProgressVariantRecord() {
+    TaskProgressVariantRecord rec = new TaskProgressVariantRecord();
+    rec.setTaskType(EntityControlActionEnum.ChangeSpeed);
+    
+    // note that for this discriminant there is no variant
+    return rec;
+  }
+
+	@Test
+	public void testTaskProgressVariantRecord() throws OOcodecException {
+		OOencoder encoder = factory.createOOencoder(TaskProgressVariantRecord.class);
+
+		TaskProgressVariantRecord in = createTaskProgressVariantRecord();
+
+		byte[] bytes = encoder.encode(in);
+		// encoded length must be:
+		// 4  - discriminant
+		// 0  - no padding needed
+		// 4  - encoding length
+		// ====== +
+		// 8 bytes
+		Assertions.assertEquals(8, bytes.length);
+
+		TaskProgressVariantRecord out = (TaskProgressVariantRecord) encoder.decode(bytes);
+
+		Assertions.assertEquals(in.getTaskType().getValue(), out.getTaskType().getValue());
 	}
 
 }

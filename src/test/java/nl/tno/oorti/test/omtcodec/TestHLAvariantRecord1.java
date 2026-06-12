@@ -115,7 +115,7 @@ public class TestHLAvariantRecord1 {
             });
 
     String expectedMessage =
-        "Invalid null value for discrimant Discriminant of datatype VariantRecordType1";
+        "Invalid null value for discriminant Discriminant of datatype VariantRecordType1";
     String actualMessage = exception.getMessage();
 
     Assertions.assertTrue(actualMessage.equals(expectedMessage));
