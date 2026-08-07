@@ -2,7 +2,6 @@ package nl.tno.oorti.impl;
 
 import hla.rti1516e.ObjectInstanceHandle;
 import hla.rti1516e.exceptions.ObjectInstanceNotKnown;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import nl.tno.oorti.OOproperties;
@@ -72,10 +71,6 @@ public class ObjectInstanceManager {
     } else {
       return oi;
     }
-  }
-
-  public Collection<ObjectInstance> getObjectInstances() {
-    return this.object2instance.values();
   }
 
   public ObjectInstance removeObjectInstance(ObjectInstance objectInstance) {

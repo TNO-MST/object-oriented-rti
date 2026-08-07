@@ -618,18 +618,6 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
     ObjectClass oc = ec.getOcm().getObjectClassIfExists(clazz);
     rtiamb.unsubscribeObjectClass(oc.getClassHandle());
     oc.removeSubscriptions();
-
-    // also delete all remote object instances of this class
-    for (ObjectInstance oi : ec.getOim().getObjectInstances()) {
-      if (oi.getObjectClass().equals(oc)) {
-        try {
-          rtiamb.localDeleteObjectInstance(oi.getInstanceHandle());
-          ec.getOim().removeObjectInstance(oi);
-        } catch (OwnershipAcquisitionPending | FederateOwnsAttributes | ObjectInstanceNotKnown ex) {
-          // ignore these exceptions and continue with the next object instance
-        }
-      }
-    }
   }
 
   /////////////////////////
@@ -947,6 +935,24 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
         rtiamb.deleteObjectInstance(oi.getInstanceHandle(), userSuppliedTag, theTime);
     ec.getOim().removeObjectInstance(oi);
     return retraction;
+  }
+
+  @Override
+  public void localDeleteObjectInstance(Object theObject)
+      throws OwnershipAcquisitionPending,
+          FederateOwnsAttributes,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError {
+
+    ExecutionContext ec = ecm.getExecutionContextIfExists();
+
+    ObjectInstance oi = ec.getOim().getObjectInstanceIfExists(theObject);
+    rtiamb.localDeleteObjectInstance(oi.getInstanceHandle());
+    ec.getOim().removeObjectInstance(oi);
   }
 
   @Override

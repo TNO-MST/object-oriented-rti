@@ -380,6 +380,16 @@ public interface OORTIambassador extends RTIambassador {
           NotConnected,
           RTIinternalError;
 
+  void localDeleteObjectInstance(Object theObject)
+      throws OwnershipAcquisitionPending,
+          FederateOwnsAttributes,
+          ObjectInstanceNotKnown,
+          SaveInProgress,
+          RestoreInProgress,
+          FederateNotExecutionMember,
+          NotConnected,
+          RTIinternalError;
+
   void requestAttributeValueUpdate(Class clazz, byte[] userSuppliedTag)
       throws AttributeNotDefined,
           ObjectClassNotDefined,
