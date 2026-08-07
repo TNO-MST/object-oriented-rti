@@ -34,6 +34,8 @@ import java.util.Set;
 import nl.tno.oorti.OOFederateAmbassador;
 import nl.tno.oorti.OOattribute;
 import nl.tno.oorti.OOparameter;
+import nl.tno.oorti.exceptions.InteractionDecodingError;
+import nl.tno.oorti.exceptions.ObjectDecodingError;
 import nl.tno.oorti.impl.mim.objects.HLAfederation;
 
 /**
@@ -257,6 +259,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
             receiveInfo);
       } catch (InteractionClassNotDefined | RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
+      } catch (InteractionDecodingError ex) {
+        federateReference.reportDecodingError(ex);
       }
     }
   }
@@ -303,6 +307,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
             receiveInfo);
       } catch (InteractionClassNotDefined | RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
+      } catch (InteractionDecodingError ex) {
+        federateReference.reportDecodingError(ex);
       }
     }
   }
@@ -333,6 +339,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
             theInteraction, parameterSet, userSuppliedTag, sentOrdering, theTransport, receiveInfo);
       } catch (InteractionClassNotDefined | RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
+      } catch (InteractionDecodingError ex) {
+        federateReference.reportDecodingError(ex);
       }
     }
   }
@@ -452,7 +460,7 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
       }
 
       ec.getOim().getObjectInstanceByHandle(instanceHandle).deserialize(theAttributes);
-    } catch (RTIinternalError ex) {
+    } catch (RTIinternalError | ObjectDecodingError ex) {
       throw new FederateInternalError(ex.getMessage(), ex);
     }
   }
@@ -511,6 +519,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
             reflectInfo);
       } catch (RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
+      } catch (ObjectDecodingError ex) {
+        federateReference.reportDecodingError(ex);
       }
     }
   }
@@ -566,6 +576,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
             reflectInfo);
       } catch (RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
+      } catch (ObjectDecodingError ex) {
+        federateReference.reportDecodingError(ex);
       }
     }
   }
@@ -605,6 +617,8 @@ public class OOFederateAmbassadorImpl implements FederateAmbassador {
             oi.getObject(), attributeSet, userSuppliedTag, sentOrdering, theTransport, reflectInfo);
       } catch (RTIinternalError ex) {
         throw new FederateInternalError(ex.getMessage(), ex);
+      } catch (ObjectDecodingError ex) {
+        federateReference.reportDecodingError(ex);
       }
     }
   }

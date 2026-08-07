@@ -56,12 +56,6 @@
 			<version>1.0.0</version>
 			<type>jar</type>
 		</dependency>
-		<dependency>
-			<groupId>org.eclipse</groupId>
-			<artifactId>yasson</artifactId>
-			<version>3.0.4</version>
-			<type>jar</type>
-		</dependency>
 
 		<!-- TEST dependencies -->
 

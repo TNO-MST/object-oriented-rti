@@ -44,6 +44,8 @@ import hla.rti1516e.exceptions.SaveInProgress;
 import hla.rti1516e.exceptions.UnsupportedCallbackModel;
 import java.net.URL;
 import java.util.Set;
+import nl.tno.oorti.exceptions.InteractionEncodingError;
+import nl.tno.oorti.exceptions.ObjectEncodingError;
 
 /**
  * The OORTIambassador defines the interface that the OORTI ambassador must implement for receiving
@@ -277,6 +279,7 @@ public interface OORTIambassador extends RTIambassador {
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -287,6 +290,7 @@ public interface OORTIambassador extends RTIambassador {
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -298,6 +302,7 @@ public interface OORTIambassador extends RTIambassador {
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -310,6 +315,7 @@ public interface OORTIambassador extends RTIambassador {
           AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -322,6 +328,7 @@ public interface OORTIambassador extends RTIambassador {
           AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -334,6 +341,7 @@ public interface OORTIambassador extends RTIambassador {
           AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -432,6 +440,7 @@ public interface OORTIambassador extends RTIambassador {
       throws InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -443,6 +452,7 @@ public interface OORTIambassador extends RTIambassador {
       throws InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -455,6 +465,7 @@ public interface OORTIambassador extends RTIambassador {
           InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -470,6 +481,7 @@ public interface OORTIambassador extends RTIambassador {
           InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,

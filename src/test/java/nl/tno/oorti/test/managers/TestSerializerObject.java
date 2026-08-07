@@ -24,6 +24,8 @@ import nl.tno.oorti.OOobjectFactory;
 import nl.tno.oorti.OOproperties;
 import nl.tno.oorti.accessor.AccessorFactory;
 import nl.tno.oorti.accessor.AccessorFactoryFactory;
+import nl.tno.oorti.exceptions.ObjectDecodingError;
+import nl.tno.oorti.exceptions.ObjectEncodingError;
 import nl.tno.oorti.impl.ObjectClass;
 import nl.tno.oorti.impl.ObjectClassManager;
 import nl.tno.oorti.impl.ObjectInstance;
@@ -79,7 +81,9 @@ public class TestSerializerObject extends NullFederateAmbassador {
           ObjectClassNotPublished,
           SaveInProgress,
           RestoreInProgress,
-          ObjectInstanceNotKnown {
+          ObjectInstanceNotKnown,
+          ObjectEncodingError,
+          ObjectDecodingError {
     
     ObjectClassManager ocm =
         new ObjectClassManager(rtiamb, accessorFactory, encoderFactory, modules);
@@ -140,7 +144,9 @@ public class TestSerializerObject extends NullFederateAmbassador {
           ObjectClassNotPublished,
           SaveInProgress,
           RestoreInProgress,
-          ObjectInstanceNotKnown {
+          ObjectInstanceNotKnown,
+          ObjectEncodingError,
+          ObjectDecodingError {
 
     ObjectClassManager ocm =
         new ObjectClassManager(rtiamb, accessorFactory, encoderFactory, modules);

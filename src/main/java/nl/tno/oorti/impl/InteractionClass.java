@@ -6,16 +6,15 @@ import hla.rti1516e.ParameterHandleValueMap;
 import hla.rti1516e.ParameterHandleValueMapFactory;
 import hla.rti1516e.exceptions.InteractionParameterNotDefined;
 import hla.rti1516e.exceptions.RTIinternalError;
-import jakarta.json.bind.JsonbBuilder;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nl.tno.oorti.OOparameter;
+import nl.tno.oorti.exceptions.InteractionDecodingError;
+import nl.tno.oorti.exceptions.InteractionEncodingError;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 
 /**
@@ -120,19 +119,20 @@ public class InteractionClass {
     this.subParmSet.removeAll(parameters);
   }
 
-  public ParameterHandleValueMap serialize(Object theInteraction) throws RTIinternalError {
+  public ParameterHandleValueMap serialize(Object theInteraction)
+      throws RTIinternalError, InteractionEncodingError {
     return serialize(theInteraction, this.pubParmSet);
   }
 
   public ParameterHandleValueMap serialize(Object theInteraction, Set<OOparameter> parameterSet)
-      throws RTIinternalError {
+      throws RTIinternalError, InteractionEncodingError {
     try {
       ParameterHandleValueMap parameterValueMap = this.factory.create(parameterSet.size());
 
       for (OOparameter ooParameter : parameterSet) {
         Parameter parameter = (Parameter) ooParameter;
 
-        Object value = parameter.getAccessor().get(theInteraction);
+        Object value = parameter.getValue(theInteraction);
         if (value == null) {
           // do not serialize null value; skip
           continue;
@@ -142,17 +142,7 @@ public class InteractionClass {
           byte[] bytes = parameter.getEncoder().encode(value);
           parameterValueMap.put(parameter.getParameterHandle(), bytes);
         } catch (OOcodecException ex) {
-          Logger.getLogger(InteractionClass.class.getName())
-              .log(
-                  Level.WARNING,
-                  "Error encoding class={0}, parameter={1}, codec={2}, value={3}",
-                  new Object[] {
-                    this.name,
-                    parameter.getName(),
-                    parameter.getEncoder().toString(),
-                    JsonbBuilder.create().toJson(value)
-                  });
-          throw new RTIinternalError(ex.getMessage(), ex);
+          throw new InteractionEncodingError(ex.getMessage(), ex, theInteraction, parameter);
         }
       }
 
@@ -161,9 +151,10 @@ public class InteractionClass {
       throw new RTIinternalError(ex.getMessage(), ex);
     }
   }
-  
+
   public Set<OOparameter> deserialize(
-      ParameterHandleValueMap parameterValueMap, Object theInteraction) throws RTIinternalError {
+      ParameterHandleValueMap parameterValueMap, Object theInteraction)
+      throws RTIinternalError, InteractionDecodingError {
     try {
       Set<OOparameter> parameterSet = new HashSet<>();
 
@@ -179,22 +170,16 @@ public class InteractionClass {
         try {
           value = parameter.getEncoder().decode(entry.getValue(), null, theInteraction);
         } catch (OOcodecException ex) {
-          Logger.getLogger(InteractionClass.class.getName())
-              .log(
-                  Level.WARNING,
-                  "Error decoding class={0}, parameter={1}, codec={2}, len={3}, bytes={4}",
-                  new Object[] {
-                    this.getName(),
-                    parameter.getName(),
-                    parameter.getEncoder().toString(),
-                    entry.getValue().length,
-                    HelperFunctions.bytesToHex(entry.getValue())
-                  });
-          throw new RTIinternalError(ex.getMessage(), ex);
+          throw new InteractionDecodingError(
+              ex.getMessage(),
+              ex,
+              theInteraction,
+              parameter,
+              HelperFunctions.bytesToHex(entry.getValue()));
         }
 
         // set the new parameter value
-        parameter.getAccessor().set(theInteraction, value);
+        parameter.setValue(theInteraction, value);
 
         parameterSet.add(parameter);
       }

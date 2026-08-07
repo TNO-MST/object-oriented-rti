@@ -8,6 +8,8 @@ import hla.rti1516e.OrderType;
 import hla.rti1516e.TransportationTypeHandle;
 import hla.rti1516e.exceptions.FederateInternalError;
 import java.util.Set;
+import nl.tno.oorti.exceptions.InteractionDecodingError;
+import nl.tno.oorti.exceptions.ObjectDecodingError;
 
 /**
  * The NullOOFederateAmbassador provides a null implementation of the OOFederateAmbassador
@@ -175,6 +177,16 @@ public class NullOOFederateAmbassador extends NullFederateAmbassador
   public void reportInteractionTransportationType(
       FederateHandle theFederate, Class clazz, TransportationTypeHandle theTransportation)
       throws FederateInternalError {}
+
+  @Override
+  public void reportDecodingError(ObjectDecodingError ex) throws FederateInternalError {
+    throw new FederateInternalError(ex.getMessage(), ex);
+  }
+
+  @Override
+  public void reportDecodingError(InteractionDecodingError ex) throws FederateInternalError {
+    throw new FederateInternalError(ex.getMessage(), ex);
+  }
 
   ///////////////////////////////////
   // Ownership Management Services //

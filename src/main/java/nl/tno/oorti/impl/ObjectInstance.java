@@ -4,13 +4,12 @@ import hla.rti1516e.AttributeHandle;
 import hla.rti1516e.AttributeHandleValueMap;
 import hla.rti1516e.ObjectInstanceHandle;
 import hla.rti1516e.exceptions.RTIinternalError;
-import jakarta.json.bind.JsonbBuilder;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nl.tno.oorti.OOattribute;
 import nl.tno.oorti.OOproperties;
+import nl.tno.oorti.exceptions.ObjectDecodingError;
+import nl.tno.oorti.exceptions.ObjectEncodingError;
 import nl.tno.oorti.ooencoder.exceptions.OOcodecException;
 
 /**
@@ -54,20 +53,22 @@ public class ObjectInstance {
     return this.theName;
   }
 
-  public AttributeHandleValueMap serialize() throws RTIinternalError {
+  public AttributeHandleValueMap serialize() throws RTIinternalError, ObjectEncodingError {
     return serialize(this.theObject, this.objectClass.getPublications());
   }
 
-  public AttributeHandleValueMap serialize(Object referencedObject) throws RTIinternalError {
+  public AttributeHandleValueMap serialize(Object referencedObject)
+      throws RTIinternalError, ObjectEncodingError {
     return serialize(referencedObject, this.objectClass.getPublications());
   }
 
-  public AttributeHandleValueMap serialize(Set<OOattribute> attributeSet) throws RTIinternalError {
+  public AttributeHandleValueMap serialize(Set<OOattribute> attributeSet)
+      throws RTIinternalError, ObjectEncodingError {
     return this.serialize(this.theObject, attributeSet);
   }
 
   public AttributeHandleValueMap serialize(Object referencedObject, Set<OOattribute> attributeSet)
-      throws RTIinternalError {
+      throws RTIinternalError, ObjectEncodingError {
 
     AttributeHandleValueMap ahvm =
         this.objectClass.getAttributeHandleValueMapFactory().create(attributeSet.size());
@@ -77,7 +78,7 @@ public class ObjectInstance {
         Attribute attribute = (Attribute) ooAttribute;
 
         // get the attribute value
-        Object value = attribute.getAccessor().get(referencedObject);
+        Object value = attribute.getValue(referencedObject);
         if (value == null) {
           // do not serialize null value; skip
           continue;
@@ -88,19 +89,7 @@ public class ObjectInstance {
           byte[] bytes = attribute.getEncoder().encode(value);
           ahvm.put(attribute.getAttributeHandle(), bytes);
         } catch (OOcodecException ex) {
-          Logger.getLogger(ObjectInstance.class.getName())
-              .log(
-                  Level.WARNING,
-                  "Error encoding class={0}, instanceHandle={1}, attribute={2}, codec={3}, value={4}",
-                  new Object[] {
-                    this.objectClass.getName(),
-                    this.instanceHandle.toString(),
-                    attribute.getName(),
-                    attribute.getEncoder().toString(),
-                    JsonbBuilder.create().toJson(value)
-                  });
-
-          throw new RTIinternalError(ex.getMessage(), ex);
+          throw new ObjectEncodingError(ex.getMessage(), ex, referencedObject, attribute);
         }
       }
 
@@ -111,7 +100,7 @@ public class ObjectInstance {
   }
 
   public Set<OOattribute> deserialize(AttributeHandleValueMap attributeValueMap)
-      throws RTIinternalError {
+      throws RTIinternalError, ObjectDecodingError {
     try {
       Set<OOattribute> attributeSet = new HashSet<>();
 
@@ -128,31 +117,20 @@ public class ObjectInstance {
 
         // use current value on in place copy, otherwise create new value
         Object value =
-            (this.properties.isUseInPlaceCopy()) ? attribute.getAccessor().get(theObject) : null;
+            (this.properties.isUseInPlaceCopy()) ? attribute.getValue(theObject) : null;
 
         // decode bytes to an attribute value
         try {
           value = attribute.getEncoder().decode(bytes, value, theObject);
         } catch (OOcodecException ex) {
-          Logger.getLogger(ObjectInstance.class.getName())
-              .log(
-                  Level.WARNING,
-                  "Error decoding class={0}, instanceHandle={1}, attribute={2}, codec={3}, len={4}, bytes={5}",
-                  new Object[] {
-                    this.objectClass.getName(),
-                    this.instanceHandle.toString(),
-                    attribute.getName(),
-                    attribute.getEncoder().toString(),
-                    bytes.length,
-                    HelperFunctions.bytesToHex(bytes)
-                  });
-          throw new RTIinternalError(ex.getMessage(), ex);
+          throw new ObjectDecodingError(
+              ex.getMessage(), ex, theObject, attribute, HelperFunctions.bytesToHex(bytes));
         }
 
         // set the new attribute value
-        attribute.getAccessor().set(this.theObject, value);
+        attribute.setValue(this.theObject, value);
 
-        // add the attrbute to the set of deserialized attributes
+        // add the attribute to the set of deserialized attributes
         attributeSet.add(attribute);
       }
 
