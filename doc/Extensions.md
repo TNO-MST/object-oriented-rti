@@ -58,6 +58,12 @@ Several methods are added to send Java objects in the federation execution as an
 
 Optionally a set `OOparameter` objects can be provided to indicate which properties are to be sent as interaction parameter. If no set is provided then all published properties are to be sent.
 
+#### Encoding and decoding error reporting
+
+Methods are extended and added to report object instance and interaction encoding and decoding errors:
+- An encoding error is reported via an exception (on update attribute value or send interaction).
+- A decoding error is reported via a report callback method (on reflect attribute value or receive interaction).
+
 ### Ownership Management Services
 
 Several methods are added for transferrring attribute ownership, using Java objects and properties in the method invocations.
@@ -96,4 +102,7 @@ An HLA attribute is identified by an object the implements the `OOattribute` int
 
 Similarly an HLA parameter is identified by an object the implements the `OOparameter` interface.
 
-Via the interface the name of the attribute and a previously provided cookie (if any) can be set or retrieved. The cookie is a caller provided object that can be associated with an attribute or parameter.
+There interfaces provide several methods. For instance,
+- get name of property
+- get or set value of property
+- get or set a cookie for the property. The cookie is a caller provided object that can be associated with an attribute or parameter.

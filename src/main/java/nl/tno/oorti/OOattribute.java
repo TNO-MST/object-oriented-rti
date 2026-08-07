@@ -8,6 +8,10 @@ package nl.tno.oorti;
 public interface OOattribute {
 
   public String getName();
+  
+  public Object getValue(Object theObject) throws ReflectiveOperationException;
+  
+  public void setValue(Object theObject, Object value) throws ReflectiveOperationException;
 
   public Object getCookie();
 

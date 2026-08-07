@@ -8,6 +8,8 @@ import hla.rti1516e.OrderType;
 import hla.rti1516e.TransportationTypeHandle;
 import hla.rti1516e.exceptions.FederateInternalError;
 import java.util.Set;
+import nl.tno.oorti.exceptions.InteractionDecodingError;
+import nl.tno.oorti.exceptions.ObjectDecodingError;
 
 /**
  * The OOFederateAmbassador defines the interface that a federate must implement for receiving
@@ -152,6 +154,10 @@ public interface OOFederateAmbassador extends FederateAmbassador {
   void reportInteractionTransportationType(
       FederateHandle theFederate, Class clazz, TransportationTypeHandle theTransportation)
       throws FederateInternalError;
+
+  void reportDecodingError(ObjectDecodingError ex) throws FederateInternalError;
+
+  void reportDecodingError(InteractionDecodingError ex) throws FederateInternalError;
 
   ///////////////////////////////////
   // Ownership Management Services //

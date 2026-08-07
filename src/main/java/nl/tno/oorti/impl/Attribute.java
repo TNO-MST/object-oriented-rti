@@ -19,11 +19,7 @@ public class Attribute implements OOattribute {
   // mutable properties
   private volatile Object cookie = null;
 
-  Attribute(
-      String name,
-      AttributeHandle attributeHandle,
-      Accessor accessor,
-      OOencoder encoder) {
+  Attribute(String name, AttributeHandle attributeHandle, Accessor accessor, OOencoder encoder) {
     this.name = name;
     this.attributeHandle = attributeHandle;
     this.accessor = accessor;
@@ -35,18 +31,24 @@ public class Attribute implements OOattribute {
     return this.name;
   }
 
-  public AttributeHandle getAttributeHandle() {
+  @Override
+  public Object getValue(Object theObject) throws ReflectiveOperationException {
+    return this.accessor.get(theObject);
+  }
+
+  @Override
+  public void setValue(Object theObject, Object value) throws ReflectiveOperationException {
+    this.accessor.set(theObject, value);
+  }
+
+  AttributeHandle getAttributeHandle() {
     return this.attributeHandle;
   }
 
-  public Accessor getAccessor() {
-    return this.accessor;
-  }
-
-  public OOencoder getEncoder() {
+  OOencoder getEncoder() {
     return this.encoder;
   }
-  
+
   @Override
   public Object getCookie() {
     return this.cookie;

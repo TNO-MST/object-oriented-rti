@@ -35,12 +35,18 @@ public class Parameter implements OOparameter {
     return this.name;
   }
 
-  ParameterHandle getParameterHandle() {
-    return this.parameterHandle;
+  @Override
+  public Object getValue(Object theInteraction) throws ReflectiveOperationException {
+    return this.accessor.get(theInteraction);
   }
 
-  Accessor getAccessor() {
-    return this.accessor;
+  @Override
+  public void setValue(Object theInteraction, Object value) throws ReflectiveOperationException {
+    this.accessor.set(theInteraction, value);
+  }
+
+  ParameterHandle getParameterHandle() {
+    return this.parameterHandle;
   }
 
   OOencoder getEncoder() {

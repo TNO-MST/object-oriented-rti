@@ -66,6 +66,8 @@ import nl.tno.oorti.OOparameter;
 import nl.tno.oorti.OOproperties;
 import nl.tno.oorti.accessor.AccessorFactory;
 import nl.tno.oorti.accessor.AccessorFactoryFactory;
+import nl.tno.oorti.exceptions.InteractionEncodingError;
+import nl.tno.oorti.exceptions.ObjectEncodingError;
 import nl.tno.oorti.impl.mim.objects.HLAfederation;
 import nl.tno.oorti.ooencoder.OOencoderFactory;
 import nl.tno.oorti.ooencoder.OOencoderFactoryFactory;
@@ -753,6 +755,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -770,6 +773,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -788,6 +792,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
       throws AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -808,6 +813,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -828,6 +834,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -848,6 +855,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           AttributeNotOwned,
           AttributeNotDefined,
           ObjectInstanceNotKnown,
+          ObjectEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -1032,6 +1040,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
       throws InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -1052,6 +1061,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
       throws InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -1074,6 +1084,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
@@ -1099,6 +1110,7 @@ public class OORTIambassadorImpl extends NullRTIambassador implements OORTIambas
           InteractionClassNotPublished,
           InteractionParameterNotDefined,
           InteractionClassNotDefined,
+          InteractionEncodingError,
           SaveInProgress,
           RestoreInProgress,
           FederateNotExecutionMember,
